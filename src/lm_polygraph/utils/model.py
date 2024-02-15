@@ -18,6 +18,7 @@ from transformers import (
 from lm_polygraph.utils.generation_parameters import GenerationParameters
 from lm_polygraph.utils.prompt_templates.llama import LlamaPromptTemplate
 from lm_polygraph.utils.prompt_templates.vicuna import get_vicuna_prompt
+from lm_polygraph.utils.prompt_templates.mixtral import get_mixtral_prompt
 from lm_polygraph.utils.ensemble_utils.ensemble_generator import EnsembleGenerationMixin
 from lm_polygraph.utils.ensemble_utils.dropout import replace_dropout
 
@@ -423,18 +424,20 @@ class WhiteboxModel(Model):
             dict[str, torch.Tensor]: tensors dictionary obtained by tokenizing input texts batch.
         """
         model_type = self.model.config._name_or_path.lower()
-        if "falcon" in model_type or "llama" in model_type or "vicuna" in model_type:
+        if "falcon" in model_type or "llama" in model_type or "vicuna" in model_type or "mixtral" in model_type:
             prompted_texts = []
             for text in texts:
                 if "llama" in model_type:
                     template = LlamaPromptTemplate()
                     template.add_user_message(text)
-                    prompted_texts.append(template.build_prompt())
+                    prompted_text = template.build_prompt()
                 elif "vicuna" in model_type:
                     prompted_text = get_vicuna_prompt(text)
-                    prompted_texts.append(prompted_text)
+                elif "mixtral" in model_type:
+                    prompted_text = get_mixtral_prompt(text)
                 else:
-                    prompted_texts.append(text)
+                    prompted_text = text
+                prompted_texts.append(prompted_text)
             tokenized = self.tokenizer(
                 prompted_texts,
                 truncation=True,
