@@ -70,7 +70,8 @@ def main(args):
 
         model = WhiteboxModel.from_pretrained(
             args.model,
-            device=device,
+            #device=device,
+            device_map='auto',
             **cache_kwargs,
             **model_kwargs
         )
