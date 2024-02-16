@@ -209,7 +209,7 @@ class Dataset:
                     inst["opc"],
                     inst["opd"],
                 ]
-                answers = "\n".join([f"{i+1}) {answer}" for i, answer in enumerate(non_formatted_answers)])
+                answers = "\n".join([f"{i}) {answer}" for i, answer in enumerate(non_formatted_answers)])
                 x.append(prompt.format(question=inst['question'], answers=answers))
                 y.append(str(inst['cop']))
         elif len(prompt):
