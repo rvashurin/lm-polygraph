@@ -18,6 +18,7 @@ from lm_polygraph.utils.dataset import Dataset
 from lm_polygraph.utils.model import WhiteboxModel, create_ensemble
 from lm_polygraph.utils.processor import Logger
 from lm_polygraph.generation_metrics.accuracy import AccuracyMetric
+from lm_polygraph.generation_metrics.first_symbol_accuracy import FirstSymbolAccuracyMetric
 from lm_polygraph.generation_metrics.bart_score import BartScoreSeqMetric
 from lm_polygraph.generation_metrics.rouge import RougeMetric
 from lm_polygraph.generation_metrics.bert_score import BertScoreMetric
@@ -332,6 +333,7 @@ def get_generation_metrics(generation_metrics):
             BertScoreMetric(),
             SbertMetric(),
             AccuracyMetric(),
+            FirstSymbolAccuracyMetric(),
         ]
     else:
         result = []
