@@ -19,6 +19,7 @@ from transformers.generation.utils import (
     GreedySearchOutput,
     GreedySearchDecoderOnlyOutput,
     ModelOutput,
+    GenerateNonBeamOutput
 )
 
 class MixtralGreedySearch(GenerationMixin):
