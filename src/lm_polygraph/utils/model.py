@@ -21,6 +21,7 @@ from lm_polygraph.utils.prompt_templates.vicuna import get_vicuna_prompt
 from lm_polygraph.utils.prompt_templates.mixtral import get_mixtral_prompt
 from lm_polygraph.utils.ensemble_utils.ensemble_generator import EnsembleGenerationMixin
 from lm_polygraph.utils.ensemble_utils.dropout import replace_dropout
+from lm_polygraph.utils.mixtral_greedy import MixtralGreedySearch
 
 
 class Model(ABC):
@@ -371,6 +372,8 @@ class WhiteboxModel(Model):
             model = AutoModelForCausalLM.from_pretrained(
                 model_path, max_length=256, torch_dtype=torch.float16, trust_remote_code=True, **kwargs
             )
+            if "mixtral" in model_path:
+                modify_mixtral(model)
         elif any(
             [
                 ("Seq2SeqLM" in architecture)
@@ -451,6 +454,14 @@ class WhiteboxModel(Model):
             )
 
         return tokenized
+
+
+def modify_mixtral(
+    model: WhiteboxModel
+):
+    model.model.__class__ = type(
+        "MixtralUE", (model.model.__class__, MixtralGreedySearch), {}
+    )
 
 
 def create_ensemble(
