@@ -25,7 +25,7 @@ from .mahalanobis_distance import MahalanobisDistanceSeq
 from .relative_mahalanobis_distance import RelativeMahalanobisDistanceSeq
 from .rde import RDESeq
 from .ppl_md import PPLMDSeq
-from .expert_entropy import MeanExpertEntropy, EntropyOfExpertMean
+from .expert_entropy import FirstTokenMeanExpertEntropy, FirstTokenEntropyOfExpertMean
 from .ensemble_token_measures import (
     EPTtu,
     EPTdu,

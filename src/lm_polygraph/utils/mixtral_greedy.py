@@ -280,7 +280,7 @@ class MixtralGreedySearch(GenerationMixin):
                     hidden_states=decoder_hidden_states,
                     past_key_values=model_kwargs.get("past_key_values"),
                     mean_entropies=mean_entropies,
-                    entropies_of_mean=mean_entropies,
+                    entropies_of_mean=entropies_of_mean,
                 )
         else:
             return input_ids
