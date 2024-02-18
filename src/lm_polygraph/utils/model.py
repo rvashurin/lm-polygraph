@@ -372,7 +372,7 @@ class WhiteboxModel(Model):
             model = AutoModelForCausalLM.from_pretrained(
                 model_path, max_length=256, torch_dtype=torch.float16, trust_remote_code=True, **kwargs
             )
-            if "mixtral" in model_path:
+            if "mixtral" in config.model_type:
                 model.config.output_router_logits = True
                 modify_mixtral(model)
         elif any(
@@ -460,8 +460,8 @@ class WhiteboxModel(Model):
 def modify_mixtral(
     model: WhiteboxModel
 ):
-    model.model.__class__ = type(
-        "MixtralUE", (model.model.__class__, MixtralGreedySearch), {}
+    model.__class__ = type(
+        "MixtralUE", (model.__class__, MixtralGreedySearch), {}
     )
 
 
