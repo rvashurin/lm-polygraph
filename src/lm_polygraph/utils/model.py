@@ -374,7 +374,9 @@ class WhiteboxModel(Model):
             )
             if "mixtral" in config.model_type:
                 model.config.output_router_logits = True
-                modify_mixtral(model)
+                model.__class__ = type(
+                    "MixtralUE", (model.__class__, MixtralGreedySearch), {}
+                )
         elif any(
             [
                 ("Seq2SeqLM" in architecture)
@@ -455,14 +457,6 @@ class WhiteboxModel(Model):
             )
 
         return tokenized
-
-
-def modify_mixtral(
-    model: WhiteboxModel
-):
-    model.__class__ = type(
-        "MixtralUE", (model.__class__, MixtralGreedySearch), {}
-    )
 
 
 def create_ensemble(
