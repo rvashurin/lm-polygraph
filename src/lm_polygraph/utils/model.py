@@ -373,6 +373,7 @@ class WhiteboxModel(Model):
                 model_path, max_length=256, torch_dtype=torch.float16, trust_remote_code=True, **kwargs
             )
             if "mixtral" in model_path:
+                model.config.output_router_logits = True
                 modify_mixtral(model)
         elif any(
             [
