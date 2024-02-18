@@ -70,6 +70,8 @@ class GreedyProbsCalculator(StatCalculator):
                 "greedy_log_likelihoods",
                 "train_greedy_log_likelihoods",
                 "embeddings",
+                "mixtral_mean_entropies",
+                "mixtral_entropies_of_mean",
             ],
             [],
         )
@@ -180,6 +182,8 @@ class GreedyProbsCalculator(StatCalculator):
             "greedy_tokens": cut_sequences,
             "greedy_texts": cut_texts,
             "greedy_log_likelihoods": ll,
+            "mixtral_mean_entropies": torch.stack(out.mean_entropies).cpu().numpy(),
+            "mixtral_entropies_of_mean": torch.stack(out.entropies_of_mean).cpu().numpy(),
         }
         result_dict.update(embeddings_dict)
 

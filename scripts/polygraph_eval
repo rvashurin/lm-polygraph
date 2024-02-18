@@ -262,6 +262,8 @@ def get_ue_methods(args, model):
             MaximumSequenceProbability(),
             Perplexity(),
             MeanTokenEntropy(),
+            MeanExpertEntropy(),
+            EntropyOfExpertMean(),
             #MeanPointwiseMutualInformation(),
             #MeanConditionalPointwiseMutualInformation(),
             #PTrue(),
