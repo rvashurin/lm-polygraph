@@ -15,7 +15,7 @@ class FirstTokenMeanExpertEntropy(Estimator):
     def __call__(self, stats: Dict[str, np.ndarray]) -> np.ndarray:
         entropies = stats["mixtral_mean_entropies"]
 
-        return [entropies[0]]
+        return np.array([entropies[0]])
 
 
 class FirstTokenEntropyOfExpertMean(Estimator):
@@ -28,4 +28,4 @@ class FirstTokenEntropyOfExpertMean(Estimator):
     def __call__(self, stats: Dict[str, np.ndarray]) -> np.ndarray:
         entropies = stats["mixtral_entropies_of_mean"]
 
-        return [entropies[0]]
+        return np.array([entropies[0]])
