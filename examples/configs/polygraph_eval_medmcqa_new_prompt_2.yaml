@@ -1,0 +1,66 @@
+hydra:
+  run:
+    dir: ${cache_path}/${task}/${model}/${dataset}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+
+cache_path: ./workdir/output
+save_path: '${hydra:run.dir}'
+
+device: cuda
+
+task: qa
+
+dataset: medmcqa
+text_column: question
+label_column: cop
+prompt: "A highly knowledgeable and intelligent AI answers multiple-choice questions about medicine. It's response starts with the letter of correct answer.\n\nChronic urethral obstruction due to benign prismatic hyperplasia can lead to the following change in kidney parenchyma\nA Hyperplasia\nB Hypertrophy\nC Atrophy\nD Dysplasia\nAnswer: C\n\nWhich vitamin is supplied from only animal source:\nA Vitamin C\nB Vitamin B7\nC Vitamin B12\nD Vitamin D\nAnswer: C\n\n{question}\n{answers}\nAnswer:\n"
+train_split: train
+eval_split: validation
+max_new_tokens: 2
+load_from_disk: false
+
+train_dataset: null
+train_test_split: false
+test_split_size: 1
+
+background_train_dataset: allenai/c4
+background_train_dataset_text_column: text
+background_train_dataset_label_column: url
+background_train_dataset_data_files: en/c4-train.00000-of-01024.json.gz
+background_load_from_disk: false
+
+subsample_background_train_dataset: 1000
+subsample_train_dataset: 1000
+subsample_eval_dataset: -1
+
+model: mistralai/Mixtral-8x7B-Instruct-v0.1
+use_auth_token:
+ensemble: false
+mc: false
+mc_seeds: []
+dropout_rate:
+
+use_density_based_ue: false
+use_seq_ue: true
+use_tok_ue: false
+use_ens_ue: false
+generation_metrics: null
+ens_type: 
+
+# Examples of providing additional UE methods:
+# additional_estimators: {
+#   'lm_polygraph.estimators.perplexity': ['Perplexity'],
+#   'lm_polygraph.estimators.eig_val_laplacian': ['EigValLaplacian']
+# }
+# additional_estimators_kwargs: {
+#   'Perplexity': {},
+#   'EigValLaplacian': {'similarity_score': 'NLI_score', 'affinity': 'entail'}
+# }
+
+ignore_exceptions: false
+
+batch_size: 1
+deberta_batch_size: 10
+
+seed:
+    - 1
+    
