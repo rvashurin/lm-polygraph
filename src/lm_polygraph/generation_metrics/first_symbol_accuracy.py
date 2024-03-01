@@ -17,6 +17,8 @@ class FirstSymbolAccuracyMetric(GenerationMetric):
         return "FirstTokenAccuracy"
 
     def _score_single(self, t1: str, t2: str) -> int:
+        if len(t1.strip()) < 1:
+            return 0
         if t1.strip()[0] == t2.strip()[0]:
             return 1
         return 0

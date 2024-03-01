@@ -328,13 +328,13 @@ def get_ue_methods(args, model):
 def get_generation_metrics(generation_metrics):
     if generation_metrics is None:
         return [
-            RougeMetric("rouge1"),
-            RougeMetric("rouge2"),
-            RougeMetric("rougeL"),
-            BartScoreSeqMetric("rh"),
-            BertScoreMetric(),
-            SbertMetric(),
-            AccuracyMetric(),
+            #RougeMetric("rouge1"),
+            #RougeMetric("rouge2"),
+            #RougeMetric("rougeL"),
+            #BartScoreSeqMetric("rh"),
+            #BertScoreMetric(),
+            #SbertMetric(),
+            #AccuracyMetric(),
             FirstSymbolAccuracyMetric(),
         ]
     else:

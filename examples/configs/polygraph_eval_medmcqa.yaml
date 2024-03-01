@@ -15,7 +15,7 @@ label_column: cop
 prompt: "Choose correct answer for a given question. Your output must always start with the number of correct answer. \n\nExmaple:\nQuestion:\nWhat is the color of the sky?\n\nAnswers:\n0) Green\n1) Red\n2) Blue\n\nYour output:\n2\n\nQuestion:\n{question}\n\nAnswers:\n{answers}\n\nThe correct answer is:\n" 
 train_split: train
 eval_split: validation
-max_new_tokens: 20
+max_new_tokens: 2
 load_from_disk: false
 
 train_dataset: null
@@ -30,7 +30,7 @@ background_load_from_disk: false
 
 subsample_background_train_dataset: 1000
 subsample_train_dataset: 1000
-subsample_eval_dataset: 10
+subsample_eval_dataset: -1
 
 model: mistralai/Mixtral-8x7B-Instruct-v0.1
 use_auth_token:
