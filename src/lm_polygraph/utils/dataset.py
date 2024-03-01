@@ -201,6 +201,7 @@ class Dataset:
                         x.append(prompt.format(context=context.strip(), question=text))
                         y.append(answer)
         elif("medmcqa" in dataset_name.lower()) and len(prompt):
+            answer_ids = ['A', 'B', 'C', 'D']
             x, y = [], []
             for inst in dataset:
                 non_formatted_answers = [
@@ -209,9 +210,9 @@ class Dataset:
                     inst["opc"],
                     inst["opd"],
                 ]
-                answers = "\n".join([f"{i}) {answer}" for i, answer in enumerate(non_formatted_answers) if answer.strip().strip('.') != 'None'])
+                answers = "\n".join([f"{answer_ids[i]} {answer}" for i, answer in enumerate(non_formatted_answers) if answer.strip().strip('.') != 'None'])
                 x.append(prompt.format(question=inst['question'], answers=answers))
-                y.append(str(inst['cop']))
+                y.append(answer_ids[int(inst['cop'])])
         elif len(prompt):
             x = [prompt.format(text=text) for text in dataset[x_column]]
             y = dataset[y_column]
