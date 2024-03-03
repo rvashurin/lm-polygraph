@@ -211,8 +211,9 @@ class Dataset:
                     inst["opd"],
                 ]
                 answers = "\n".join([f"{answer_ids[i]} {answer}" for i, answer in enumerate(non_formatted_answers) if answer.strip().strip('.') != 'None'])
-                x.append(prompt.format(question=inst['question'], answers=answers))
-                y.append(answer_ids[int(inst['cop'])])
+                prompted = prompt.format(question=inst['question'], answers=answers)
+                x.append('|'.join([prompted.strip() + ' ' + answer_id for answer_id in answer_ids]))
+                y.append(str(inst['cop']))
         elif len(prompt):
             x = [prompt.format(text=text) for text in dataset[x_column]]
             y = dataset[y_column]

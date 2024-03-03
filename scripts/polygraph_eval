@@ -23,6 +23,7 @@ from lm_polygraph.generation_metrics.bart_score import BartScoreSeqMetric
 from lm_polygraph.generation_metrics.rouge import RougeMetric
 from lm_polygraph.generation_metrics.bert_score import BertScoreMetric
 from lm_polygraph.generation_metrics.sbert import SbertMetric
+from lm_polygraph.generation_metrics.completion_accuracy import CompletionAccuracyMetric
 from lm_polygraph.estimators import *
 from lm_polygraph.estimators.ensemble_token_measures import all_token_estimators
 from lm_polygraph.estimators.ensemble_sequence_measures import all_ep_estimators, all_pe_estimators
@@ -259,9 +260,9 @@ def get_ue_methods(args, model):
     estimators = []
     if args.use_seq_ue:
         estimators += [
-            MaximumSequenceProbability(),
-            Perplexity(),
-            MeanTokenEntropy(),
+            #MaximumSequenceProbability(),
+            #Perplexity(),
+            #MeanTokenEntropy(),
             FirstTokenMeanExpertEntropy(),
             FirstTokenEntropyOfExpertMean(),
             #MeanPointwiseMutualInformation(),
@@ -335,7 +336,8 @@ def get_generation_metrics(generation_metrics):
             #BertScoreMetric(),
             #SbertMetric(),
             #AccuracyMetric(),
-            FirstSymbolAccuracyMetric(),
+            #FirstSymbolAccuracyMetric(),
+            CompletionAccuracyMetric(),
         ]
     else:
         result = []

@@ -253,10 +253,11 @@ class UEManager:
         _check_unique_names(estimators)
         _check_unique_names(ue_metrics)
 
-        if isinstance(model, BlackboxModel):
-            greedy = ["blackbox_greedy_texts"]
-        else:
-            greedy = ["greedy_tokens", "greedy_texts"]
+        #if isinstance(model, BlackboxModel):
+        #    greedy = ["blackbox_greedy_texts"]
+        #else:
+        #    greedy = ["greedy_tokens", "greedy_texts"]
+        greedy = []
 
         stats = (
             [s for e in self.estimators for s in e.stats_dependencies]
