@@ -4,6 +4,7 @@ import numpy as np
 
 from sklearn.model_selection import train_test_split
 from datasets import load_dataset, Dataset as hf_dataset
+from lm_eval.tasks import get_task_dict
 
 from typing import Iterable, Tuple, List
 
@@ -222,6 +223,24 @@ class Dataset:
             y = dataset[y_column]
 
         return Dataset(x, y, batch_size)
+
+
+    @staticmethod
+    def from_harness_task(task_name, batch_size):
+        tasks = get_task_dict([task_name])
+        datasets = {}
+
+        for task_name, (_, task) in tasks.items():
+            if task is not None: 
+                x = []
+                y = []
+                for instance in task.instances:
+                    x.append(instance.arguments[0])
+                    y.append(instance.arguments[1])
+                datasets[task_name] = Dataset(x, y, batch_size))
+
+        return datasets
+
 
     @staticmethod
     def load(csv_path, *args, **kwargs):

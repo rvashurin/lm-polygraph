@@ -30,6 +30,7 @@ setup(
     url="https://github.com/IINemo/lm-polygraph",
     scripts=[
         "scripts/polygraph_eval",
+        "scripts/polygraph_heval",
         "scripts/polygraph_server",
         "scripts/polygraph_normalize",
     ],
