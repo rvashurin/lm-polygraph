@@ -167,6 +167,7 @@ class MixtralGreedySearch(GenerationMixin):
         last_token_mean_entropies = ()
         last_token_entropies_of_mean = ()
         router_logits = ()
+        all_expert_logits = ()
 
         decoder_attentions = () if (return_dict_in_generate and output_attentions) else None
         cross_attentions = () if (return_dict_in_generate and output_attentions) else None
@@ -228,6 +229,7 @@ class MixtralGreedySearch(GenerationMixin):
                     last_token_mean_entropies += (last_token_mean_entropy,)
                     last_token_entropies_of_mean += (last_token_entropy_of_mean,)
                     router_logits += (torch.stack(outputs.router_logits).cpu().numpy(),)
+                    all_expert_logits += (torch.stack(outputs.all_expert_logits).cpu().numpy(),)
                 if output_scores:
                     scores += (next_tokens_scores,)
                 if output_attentions:
@@ -293,6 +295,7 @@ class MixtralGreedySearch(GenerationMixin):
                     last_token_mean_entropies=last_token_mean_entropies,
                     last_token_entropies_of_mean=last_token_entropies_of_mean,
                     router_logits=router_logits,
+                    all_expert_logits=all_expert_logits,
                 )
         else:
             return input_ids
@@ -336,3 +339,4 @@ class MixtralOutput(ModelOutput):
     last_token_mean_entropies: Optional[Tuple[torch.FloatTensor]] = None
     last_token_entropies_of_mean: Optional[Tuple[torch.FloatTensor]] = None
     router_logits: Optional[Tuple[torch.FloatTensor]] = None
+    all_expert_logits: Optional[Tuple[torch.FloatTensor]] = None
