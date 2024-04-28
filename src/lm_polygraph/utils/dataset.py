@@ -5,6 +5,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from datasets import load_dataset, Dataset as hf_dataset
 from lm_eval.tasks import get_task_dict
+from lm_polygraph.utils.prompt_templates.mixtral import get_mixtral_prompt
 
 from typing import Iterable, Tuple, List
 
@@ -213,7 +214,8 @@ class Dataset:
                 ]
                 answers = "\n".join([f"{answer_ids[i]} {answer}" for i, answer in enumerate(non_formatted_answers) if answer.strip().strip('.') != 'None'])
                 prompted = prompt.format(question=inst['question'], answers=answers)
-                x.append('|'.join([prompted.strip() + ' ' + answer_id for answer_id in answer_ids]))
+                x.append('|'.join([get_mixtral_prompt(prompted.strip() + ' ') + answer_id for answer_id in answer_ids]))
+                #x.append('|'.join([prompted.strip() + ' ' + answer_id for answer_id in answer_ids]))
                 y.append(str(inst['cop']))
         elif len(prompt):
             x = [prompt.format(text=text) for text in dataset[x_column]]
@@ -231,13 +233,17 @@ class Dataset:
         datasets = {}
 
         for task_name, (_, task) in tasks.items():
-            if task is not None: 
+            if task is not None:
+                task.set_config(key="num_fewshot", value=5)
+                task.build_all_requests(rank=0, world_size=1)
+
                 x = []
-                y = []
                 for instance in task.instances:
                     x.append(instance.arguments[0])
-                    y.append(instance.arguments[1])
-                datasets[task_name] = Dataset(x, y, batch_size))
+                x = dict.fromkeys(x, ' A')
+                x, y = list(x.keys()), list(x.values())
+
+                datasets[task_name] = Dataset(x, y, batch_size)
 
         return datasets
 

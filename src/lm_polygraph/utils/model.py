@@ -370,8 +370,8 @@ class WhiteboxModel(Model):
         if any(["CausalLM" in architecture for architecture in config.architectures]):
             model_type = "CausalLM"
             model = AutoModelForCausalLM.from_pretrained(
-                model_path, max_length=256, torch_dtype=torch.float16, trust_remote_code=True, **kwargs
-            )
+                model_path, max_length=32000, torch_dtype=torch.float16, trust_remote_code=True, **kwargs
+            ) 
             if "mixtral" in config.model_type:
                 model.config.output_router_logits = True
                 model.__class__ = type(
@@ -410,7 +410,7 @@ class WhiteboxModel(Model):
             model_path,
             padding_side="left",
             add_bos_token=True,
-            model_max_length=1024,
+            model_max_length=model.config.max_length,
             **kwargs,
         )
 
@@ -439,8 +439,6 @@ class WhiteboxModel(Model):
                     prompted_text = template.build_prompt()
                 elif "vicuna" in model_type:
                     prompted_text = get_vicuna_prompt(text)
-                elif "mixtral" in model_type:
-                    prompted_text = get_mixtral_prompt(text)
                 else:
                     prompted_text = text
                 prompted_texts.append(prompted_text)

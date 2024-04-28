@@ -369,7 +369,6 @@ class UEManager:
 
         train_stats = self._extract_train_embeddings()
         background_train_stats = self._extract_train_embeddings(background=True)
-
         iterable_data = tqdm(self.data) if self.verbose else self.data
         for batch_i, (inp_texts, target_texts) in enumerate(iterable_data):
             batch_stats: Dict[str, np.ndarray] = {}
@@ -418,7 +417,7 @@ class UEManager:
                 self.gen_metrics[generation_metric.level, str(generation_metric)] += m
                 batch_gen_metrics[generation_metric.level, str(generation_metric)] += m
 
-            for key in ["blackbox_greedy_texts", "greedy_texts", "greedy_tokens"]:
+            for key in ["router_logits", "blackbox_greedy_texts", "greedy_texts", "greedy_tokens"]:
                 if key in batch_stats.keys():
                     self.stats[key] += batch_stats[key]
             for processor in self.processors:

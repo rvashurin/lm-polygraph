@@ -164,6 +164,9 @@ class MixtralGreedySearch(GenerationMixin):
 
         mean_entropies = ()
         entropies_of_mean = ()
+        last_token_mean_entropies = ()
+        last_token_entropies_of_mean = ()
+        router_logits = ()
 
         decoder_attentions = () if (return_dict_in_generate and output_attentions) else None
         cross_attentions = () if (return_dict_in_generate and output_attentions) else None
@@ -210,15 +213,21 @@ class MixtralGreedySearch(GenerationMixin):
             # pre-process distribution
             next_tokens_scores = logits_processor(input_ids, next_token_logits)
 
-            if 'router_logits' in outputs:
-                full_precision_logits = torch.stack(outputs.router_logits).to(torch.float32)
-                entropy_of_mean = torch.distributions.Categorical(full_precision_logits.softmax(dim=-1).mean(dim=(0,1))).entropy()
-                mean_entropy = torch.distributions.Categorical(full_precision_logits.softmax(dim=-1)).entropy().mean()
-
             # Store scores, attentions and hidden_states when required
             if return_dict_in_generate:
-                mean_entropies += (mean_entropy,)
-                entropies_of_mean += (entropy_of_mean,)
+                if 'router_logits' in outputs:
+                    full_precision_logits = torch.stack(outputs.router_logits).to(torch.float32)
+                    entropy_of_mean = torch.distributions.Categorical(full_precision_logits.softmax(dim=-1).mean(dim=(0,1))).entropy()
+                    mean_entropy = torch.distributions.Categorical(full_precision_logits.softmax(dim=-1)).entropy().mean()
+                    last_token_logits = full_precision_logits[:, -1, :]
+                    last_token_entropy_of_mean = torch.distributions.Categorical(last_token_logits.softmax(dim=-1).mean(dim=(0))).entropy()
+                    last_token_mean_entropy = torch.distributions.Categorical(last_token_logits.softmax(dim=-1)).entropy().mean()
+
+                    mean_entropies += (mean_entropy,)
+                    entropies_of_mean += (entropy_of_mean,)
+                    last_token_mean_entropies += (last_token_mean_entropy,)
+                    last_token_entropies_of_mean += (last_token_entropy_of_mean,)
+                    router_logits += (torch.stack(outputs.router_logits).cpu().numpy(),)
                 if output_scores:
                     scores += (next_tokens_scores,)
                 if output_attentions:
@@ -281,6 +290,9 @@ class MixtralGreedySearch(GenerationMixin):
                     past_key_values=model_kwargs.get("past_key_values"),
                     mean_entropies=mean_entropies,
                     entropies_of_mean=entropies_of_mean,
+                    last_token_mean_entropies=last_token_mean_entropies,
+                    last_token_entropies_of_mean=last_token_entropies_of_mean,
+                    router_logits=router_logits,
                 )
         else:
             return input_ids
@@ -321,3 +333,6 @@ class MixtralOutput(ModelOutput):
     past_key_values: Optional[Tuple[Tuple[Tuple[torch.FloatTensor]]]] = None
     mean_entropies: Optional[Tuple[torch.FloatTensor]] = None
     entropies_of_mean: Optional[Tuple[torch.FloatTensor]] = None
+    last_token_mean_entropies: Optional[Tuple[torch.FloatTensor]] = None
+    last_token_entropies_of_mean: Optional[Tuple[torch.FloatTensor]] = None
+    router_logits: Optional[Tuple[torch.FloatTensor]] = None

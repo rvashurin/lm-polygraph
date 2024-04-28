@@ -12,7 +12,7 @@ task: qa
 dataset: medmcqa
 text_column: question
 label_column: cop
-prompt: "A highly knowledgeable and intelligent AI answers multiple-choice questions about medicine. It's response starts with the letter of correct answer.\n\nChronic urethral obstruction due to benign prismatic hyperplasia can lead to the following change in kidney parenchyma\nA Hyperplasia\nB Hypertrophy\nC Atrophy\nD Dysplasia\nAnswer: C\n\n{question}\n{answers}\nAnswer:\n"
+prompt: "A highly knowledgeable and intelligent AI answers multiple-choice questions about medicine. It's response starts with the letter of correct answer.\n\nChronic urethral obstruction due to benign prismatic hyperplasia can lead to the following change in kidney parenchyma\nA Hyperplasia\nB Hypertrophy\nC Atrophy\nD Dysplasia\nAnswer: C\n\n{question}\n{answers}\nAnswer: "
 train_split: train
 eval_split: validation
 max_new_tokens: 2
