@@ -191,6 +191,7 @@ class GreedyProbsCalculator(StatCalculator):
             "mixtral_last_token_mean_entropies": torch.stack(out.last_token_mean_entropies).cpu().numpy(),
             "mixtral_last_token_entropies_of_mean": torch.stack(out.last_token_entropies_of_mean).cpu().numpy(),
             "router_logits": out.router_logits,
+            "all_expert_logits": out.all_expert_logits,
         }
         result_dict.update(embeddings_dict)
 
