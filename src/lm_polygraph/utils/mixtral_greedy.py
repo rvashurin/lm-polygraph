@@ -228,7 +228,13 @@ class MixtralGreedySearch(GenerationMixin):
                     entropies_of_mean += (entropy_of_mean,)
                     last_token_mean_entropies += (last_token_mean_entropy,)
                     last_token_entropies_of_mean += (last_token_entropy_of_mean,)
-                    router_logits += (torch.stack(outputs.router_logits).cpu().numpy(),)
+                    # first case is for first token - when router logits are returned for whole input sequence
+                    # second is for others - when only one forward pass is done through model
+                    try:
+                        router_logits_reshaped = torch.stack(outputs.router_logits).reshape(32, input_ids.shape[0], input_ids.shape[1], 8)
+                    except:
+                        router_logits_reshaped = torch.stack(outputs.router_logits).reshape(32, input_ids.shape[0], 1, 8)
+                    router_logits += (router_logits_reshaped,)
                     all_expert_logits += (torch.stack(outputs.all_expert_logits).cpu().numpy(),)
                 if output_scores:
                     scores += (next_tokens_scores,)
@@ -282,6 +288,8 @@ class MixtralGreedySearch(GenerationMixin):
 
         if streamer is not None:
             streamer.end()
+        
+        router_logits = list(torch.cat(router_logits, dim=2).permute(1,0,2,3).cpu().numpy())
 
         if return_dict_in_generate:
                 return MixtralOutput(
