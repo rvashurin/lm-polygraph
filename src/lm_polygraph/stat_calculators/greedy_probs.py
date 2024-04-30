@@ -186,10 +186,6 @@ class GreedyProbsCalculator(StatCalculator):
             "greedy_tokens": cut_sequences,
             "greedy_texts": cut_texts,
             "greedy_log_likelihoods": ll,
-            "mixtral_mean_entropies": torch.stack(out.mean_entropies).cpu().numpy(),
-            "mixtral_entropies_of_mean": torch.stack(out.entropies_of_mean).cpu().numpy(),
-            "mixtral_last_token_mean_entropies": torch.stack(out.last_token_mean_entropies).cpu().numpy(),
-            "mixtral_last_token_entropies_of_mean": torch.stack(out.last_token_entropies_of_mean).cpu().numpy(),
             "router_logits": out.router_logits,
             "all_expert_logits": out.all_expert_logits,
         }
