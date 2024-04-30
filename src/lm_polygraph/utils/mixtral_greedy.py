@@ -234,8 +234,8 @@ class MixtralGreedySearch(GenerationMixin):
                         router_logits_reshaped = torch.stack(outputs.router_logits).reshape(32, input_ids.shape[0], input_ids.shape[1], 8)
                     except:
                         router_logits_reshaped = torch.stack(outputs.router_logits).reshape(32, input_ids.shape[0], 1, 8)
-                    router_logits += (router_logits_reshaped,)
-                    all_expert_logits += (torch.stack(outputs.all_expert_logits).cpu().numpy(),)
+                    router_logits += (router_logits_reshaped.cpu(),)
+                    all_expert_logits += (outputs.all_expert_logits.cpu(),)
                 if output_scores:
                     scores += (next_tokens_scores,)
                 if output_attentions:
@@ -289,7 +289,8 @@ class MixtralGreedySearch(GenerationMixin):
         if streamer is not None:
             streamer.end()
         
-        router_logits = list(torch.cat(router_logits, dim=2).permute(1,0,2,3).cpu().numpy())
+        router_logits = list(torch.cat(router_logits, dim=2).permute(1,0,2,3).numpy())
+        all_expert_logits = list(torch.stack(all_expert_logits).permute(1,0,2,3).numpy())
 
         if return_dict_in_generate:
                 return MixtralOutput(
