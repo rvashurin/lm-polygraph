@@ -8,8 +8,6 @@ defaults:
 cache_path: ./workdir/output
 save_path: '${hydra:run.dir}'
 
-device: cpu
-
 task: ats
 
 dataset: aeslc
@@ -35,7 +33,7 @@ subsample_background_train_dataset: 1000
 subsample_train_dataset: 1000
 subsample_eval_dataset: -1
 
-use_density_based_ue: true
+use_density_based_ue: false
 use_seq_ue: true
 use_tok_ue: false
 use_ens_ue: false
@@ -54,7 +52,7 @@ ens_type:
 
 ignore_exceptions: false
 
-batch_size: 1
+batch_size: 2
 deberta_batch_size: 10
 
 seed:

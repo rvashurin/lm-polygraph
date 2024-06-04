@@ -22,7 +22,7 @@ from .conditional_pointwise_mutual_information import (
 from .p_true import PTrue
 from .p_true_sampling import PTrueSampling
 from .monte_carlo_sequence_entropy import MonteCarloSequenceEntropy
-from .monte_carlo_normalized_sequence_entropy import MonteCarloNormalizedSequenceEntropy
+from .monte_carlo_normalized_sequence_entropy import MonteCarloNormalizedSequenceEntropy, MonteCarloNormalizedSequenceEntropyIW, MonteCarloNormalizedSequenceEntropyIWUpper, MonteCarloNormalizedSequenceEntropyIWLower, MonteCarloNormalizedSequenceEntropyIWAve
 from .lexical_similarity import LexicalSimilarity
 from .deg_mat import DegMat
 from .eccentricity import Eccentricity

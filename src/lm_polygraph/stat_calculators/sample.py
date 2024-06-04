@@ -98,6 +98,11 @@ class SamplingGenerationCalculator(StatCalculator):
                 "sample_tokens",
                 "sample_texts",
                 "sample_log_likelihoods",
+                "normalized_sample_log_probs",
+                "importance_weights",
+                "partition_lower",
+                "partition_upper",
+                "partition_ave"
             ],
             [],
         )
@@ -174,9 +179,35 @@ class SamplingGenerationCalculator(StatCalculator):
             tokens[int(i / self.samples_n)].append(toks)
             texts[int(i / self.samples_n)].append(model.tokenizer.decode(toks))
 
+        normalized_log_probs = np.array(
+            [
+                [lp_i / len(t_i) for lp_i, t_i in zip(lp, t) if len(t_i)]
+                for lp, t in zip(log_probs, tokens)
+            ]
+        )
+        
+        probas = np.exp(log_probs)
+        normalized_probas = np.exp(normalized_log_probs)
+
+        importance_weights = normalized_probas / probas
+
+        unnormalized_sum = probas.sum(-1)
+        normalized_sum = normalized_probas.sum(-1)
+
+        partition_lower = normalized_sum + 1 - unnormalized_sum
+        partition_upper = normalized_sum + np.exp((1/max_new_tokens) * np.log(1 - unnormalized_sum))
+        partition_ave = (partition_lower + partition_upper) / 2
+        
         return {
             "sample_log_likelihoods": log_likelihoods,
             "sample_log_probs": log_probs,
+            "normalized_sample_log_probs": normalized_log_probs,
             "sample_tokens": tokens,
             "sample_texts": texts,
+            "importance_weights": importance_weights,
+            "normalized_sum": normalized_sum,
+            "unnormalized_sum": unnormalized_sum,
+            "partition_lower": partition_lower,
+            "partition_upper": partition_upper,
+            "partition_ave": partition_ave,
         }
