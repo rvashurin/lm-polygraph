@@ -108,8 +108,9 @@ class MonteCarloNormalizedSequenceEntropyIWUpper(Estimator):
         weights = stats["importance_weights"]
         partition = stats["partition_upper"]
 
+        summand = logprobs - np.log(np.tile(partition[:,None], [1, 10]))
 
-        return -(logprobs * weights).mean(-1) * partition
+        return -(summand * weights).mean(-1) * partition
 
 class MonteCarloNormalizedSequenceEntropyIWLower(Estimator):
     def __init__(self):
@@ -143,8 +144,9 @@ class MonteCarloNormalizedSequenceEntropyIWLower(Estimator):
         weights = stats["importance_weights"]
         partition = stats["partition_lower"]
 
+        summand = logprobs - np.log(np.tile(partition[:,None], [1, 10]))
 
-        return -(logprobs * weights).mean(-1) * partition
+        return -(summand * weights).mean(-1) * partition
 
 class MonteCarloNormalizedSequenceEntropyIWAve(Estimator):
     def __init__(self):
@@ -177,6 +179,7 @@ class MonteCarloNormalizedSequenceEntropyIWAve(Estimator):
         logprobs = stats["normalized_sample_log_probs"]
         weights = stats["importance_weights"]
         partition = stats["partition_ave"]
+        
+        summand = logprobs - np.log(np.tile(partition[:,None], [1, 10]))
 
-
-        return -(logprobs * weights).mean(-1) * partition
+        return -(summand * weights).mean(-1) * partition
