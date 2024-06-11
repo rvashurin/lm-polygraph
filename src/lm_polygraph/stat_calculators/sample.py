@@ -131,6 +131,9 @@ class SamplingGenerationCalculator(StatCalculator):
         """
         batch: Dict[str, torch.Tensor] = model.tokenize(texts)
         batch = {k: v.to(model.device()) for k, v in batch.items()}
+
+        min_new_tokens = 2
+
         sequences, logits = _gen_samples(
             self.samples_n,
             model,
@@ -138,7 +141,7 @@ class SamplingGenerationCalculator(StatCalculator):
             output_scores=True,
             return_dict_in_generate=True,
             max_new_tokens=max_new_tokens,
-            min_new_tokens=2,
+            min_new_tokens=min_new_tokens,
             do_sample=True,
             num_beams=1,
             num_return_sequences=1,
@@ -185,19 +188,24 @@ class SamplingGenerationCalculator(StatCalculator):
                 for lp, t in zip(log_probs, tokens)
             ]
         )
-        
+
         probas = np.exp(log_probs)
         normalized_probas = np.exp(normalized_log_probs)
 
         importance_weights = normalized_probas / probas
 
-        unnormalized_sum = probas.sum(-1)
-        normalized_sum = normalized_probas.sum(-1)
+        unique_ids = [np.unique(batch_texts, return_index=True)[1] for batch_texts in texts]
 
-        partition_lower = normalized_sum + 1 - unnormalized_sum
+        unnormalized_sum = np.array([batch_probas[unique_ids[i]].sum() for i, batch_probas in enumerate(probas)])
+        normalized_sum = np.array([batch_probas[unique_ids[i]].sum() for i, batch_probas in enumerate(normalized_probas)])
+        
+        if min_new_tokens == 1:
+            partition_lower = normalized_sum + (1 - unnormalized_sum)
+        else:
+            partition_lower = normalized_sum + np.exp((1/min_new_tokens) * np.log(1 - unnormalized_sum))
         partition_upper = normalized_sum + np.exp((1/max_new_tokens) * np.log(1 - unnormalized_sum))
         partition_ave = (partition_lower + partition_upper) / 2
-        
+
         return {
             "sample_log_likelihoods": log_likelihoods,
             "sample_log_probs": log_probs,
