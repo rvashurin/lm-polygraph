@@ -182,9 +182,6 @@ def main(args):
         if args.subsample_eval_dataset != -1:
             dataset.subsample(args.subsample_eval_dataset, seed=seed)
 
-        breakpoint()
-        pass
-
         generation_metrics = get_generation_metrics(args)
 
         ue_metrics = get_ue_metrics(args)
