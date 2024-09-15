@@ -73,7 +73,7 @@ def main(args):
             ensemble_model = None
 
         log.info("Done with loading model.")
-
+        
         log.info(f"Loading dataset {args.dataset}...")
         dataset = Dataset.load(
             args.dataset,
@@ -83,13 +83,15 @@ def main(args):
             prompt=getattr(args, "prompt", ""),
             description=getattr(args, "description", ""),
             mmlu_max_subject_size=getattr(args, "mmlu_max_subject_size", 100),
-            n_shot=getattr(args, "n_shot", 5),
+            n_shot=getattr(args, "n_shot", 0),
             few_shot_split=getattr(args, "few_shot_split", "train"),
             few_shot_prompt=getattr(args, "few_shot_prompt", None),
             instruct=getattr(args, "instruct", None),
             split=args.eval_split,
             load_from_disk=args.load_from_disk,
             trust_remote_code=getattr(args, "trust_remote_code", False),
+            few_shot_string=getattr(args, "few_shot_string", ""),
+            para_i=getattr(args, "para_i", 0),
             **cache_kwargs
         )
         log.info("Done with loading eval data.")
@@ -179,6 +181,9 @@ def main(args):
 
         if args.subsample_eval_dataset != -1:
             dataset.subsample(args.subsample_eval_dataset, seed=seed)
+
+        breakpoint()
+        pass
 
         generation_metrics = get_generation_metrics(args)
 

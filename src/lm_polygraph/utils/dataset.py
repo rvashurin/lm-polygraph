@@ -167,6 +167,8 @@ class Dataset:
         instruct: bool = False,
         split: str = "test",
         size: int = None,
+        para_i: int = 0,
+        few_shot_string: str = "",
         **kwargs,
     ):
         """
@@ -408,6 +410,18 @@ class Dataset:
                         + prompt.format(question=inst["question"], answer="")
                     )
                 y.append([alias for alias in inst["answer"]["aliases"]])
+        elif ("tqa_para" in dataset_name.lower()) and len(prompt):
+            x, y = [], []
+
+            formatted_few_shot_prompt = ""
+            formatted_few_shot_prompt += few_shot_string
+            for inst in dataset:
+                question = inst["questions"][para_i]
+                x.append(
+                    formatted_few_shot_prompt + '\n' + \
+                    prompt.format(question=question.strip(), answer="")
+                )
+                y.append(inst["answer"])
         elif "allenai/c4" in dataset_name.lower():
             x, y = [], []
             for inst in dataset:

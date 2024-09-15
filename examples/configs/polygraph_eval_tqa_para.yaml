@@ -1,0 +1,66 @@
+hydra:
+  run:
+    dir: ${cache_path}/${task}/${model}/${dataset}/{para_i}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+
+defaults:
+  - model: bloomz-560m
+  - _self_
+
+cache_path: ./workdir/output
+save_path: '${hydra:run.dir}'
+
+task: qa
+
+dataset: 'rvashurin/tqa_para'
+text_column: questions
+label_column: answer
+few_shot_string: "Question: What is the capital of the Indian state of Tamil Nadu?\nAnswer:chennai\nQuestion: Who rules Narnia following the reign of High King Peter in the Chronicles of Narnia series by C.S. Lewis?\nAnswer:prince caspian\nQuestion: Which motor manufacturer builds the 'Movano' range of vans and mini-buses?\nAnswer:vauxhall\nQuestion: In which BBC magazine style TV programme do John Craven, Julia Bradbury and Matt Baker take part?\nAnswer:countryfile\nQuestion: Search for Extra-Terrestrial Intelligence (SETI) is the collective name for a number of activities to search for extra-terrestrial life using scientific methods to search for what, specifically?\nAnswer:electromagnetic transmissions"
+prompt: "Question: {question}\nAnswer:{answer}"
+eval_split: test
+max_new_tokens: 20
+para_i: 0
+load_from_disk: false
+multiref: true
+normalize: true
+generation_params:
+  generate_until:
+    - "\n"
+
+train_dataset: null
+train_test_split: false
+test_split_size: 1
+
+background_train_dataset: allenai/c4
+background_train_dataset_text_column: text
+background_train_dataset_label_column: url
+background_train_dataset_data_files: en/c4-train.00000-of-01024.json.gz
+background_load_from_disk: false
+
+subsample_background_train_dataset: 1000
+subsample_train_dataset: 1000
+subsample_eval_dataset: -1
+
+use_density_based_ue: false
+use_seq_ue: true
+use_tok_ue: false
+use_ens_ue: false
+generation_metrics: null
+ens_type: 
+
+# Examples of providing additional UE methods:
+# additional_estimators: {
+#   'lm_polygraph.estimators.perplexity': ['Perplexity'],
+#   'lm_polygraph.estimators.eig_val_laplacian': ['EigValLaplacian']
+# }
+# additional_estimators_kwargs: {
+#   'Perplexity': {},
+#   'EigValLaplacian': {'similarity_score': 'NLI_score', 'affinity': 'entail'}
+# }
+
+ignore_exceptions: false
+
+batch_size: 2
+deberta_batch_size: 10
+
+seed:
+    - 1
