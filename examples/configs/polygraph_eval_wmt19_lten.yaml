@@ -13,13 +13,13 @@ device: cpu
 
 task: nmt
 
-dataset: [wmt19, de-en]
-text_column: de
+dataset: [wmt19, lt-en]
+text_column: lt
 label_column: en
 prompt: "Here is a sentence in {source_lang} language and its translation in {target_lang} language.\n\nOriginal:\n{text}\nTranslation:\n"
 train_split: train
 eval_split: validation
-max_new_tokens: 202
+max_new_tokens: 171
 load_from_disk: false
 generation_params:
   generate_until:

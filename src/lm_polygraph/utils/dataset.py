@@ -7,6 +7,16 @@ from datasets import load_dataset, Dataset as hf_dataset
 
 from typing import Iterable, Tuple, List, Union, Optional
 
+ABBR_TO_LANG = {
+    "de": "German",
+    "fr": "French",
+    "en": "English",
+    "ru": "Russian",
+    "fi": "Finnish",
+    "lt": "Lithuanian",
+    "cs": "Czech"
+}
+
 
 class Dataset:
     """
@@ -194,16 +204,10 @@ class Dataset:
 
         if "translation" in dataset.column_names:
             x, y = [], []
-            source_lang = (
-                "German"
-                if x_column == "de"
-                else "French" if x_column == "fr" else "English"
-            )
-            target_lang = (
-                "German"
-                if y_column == "de"
-                else "French" if y_column == "fr" else "English"
-            )
+
+            source_lang = ABBR_TO_LANG[x_column]
+            target_lang = ABBR_TO_LANG[y_column]
+
             for inst in dataset["translation"]:
                 x.append(
                     prompt.format(

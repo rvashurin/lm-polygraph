@@ -19,7 +19,7 @@ label_column: en
 prompt: "Here is a sentence in {source_lang} language and its translation in {target_lang} language.\n\nOriginal:\n{text}\nTranslation:\n"
 train_split: train
 eval_split: test
-max_new_tokens: 107
+max_new_tokens: 197
 load_from_disk: false
 generation_params:
   generate_until:
@@ -41,7 +41,7 @@ subsample_background_train_dataset: 1000
 subsample_train_dataset: 1000
 subsample_eval_dataset: -1
 
-use_density_based_ue: true
+use_density_based_ue: false
 use_ens_ue: false
 use_seq_ue: true
 use_tok_ue: false
