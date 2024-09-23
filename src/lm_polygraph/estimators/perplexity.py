@@ -15,3 +15,14 @@ class Perplexity(Estimator):
     def __call__(self, stats: Dict[str, np.ndarray]) -> np.ndarray:
         log_likelihoods = stats["greedy_log_likelihoods"]
         return np.array([-np.mean(ll) for ll in log_likelihoods])
+
+class PerplexitySample(Estimator):
+    def __init__(self):
+        super().__init__(["sgreedy_log_likelihoods"], "sequence")
+
+    def __str__(self):
+        return "PerplexitySample"
+
+    def __call__(self, stats: Dict[str, np.ndarray]) -> np.ndarray:
+        log_likelihoods = stats["sgreedy_log_likelihoods"]
+        return np.array([-np.mean(ll) for ll in log_likelihoods])

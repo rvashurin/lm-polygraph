@@ -13,10 +13,16 @@ class GreedyLMProbsCalculator(StatCalculator):
     Used to calculate P(y_t|y_<t) subtrahend in PointwiseMutualInformation.
     """
 
-    def __init__(self):
-        super().__init__(
-            ["greedy_lm_log_probs", "greedy_lm_log_likelihoods"], ["greedy_tokens"]
-        )
+    def __init__(self, sample: bool = False):
+        if sample:
+            super().__init__(
+                ["sgreedy_lm_log_probs", "sgreedy_lm_log_likelihoods"], ["sgreedy_tokens"]
+            )
+        else:
+            super().__init__(
+                ["greedy_lm_log_probs", "greedy_lm_log_likelihoods"], ["greedy_tokens"]
+            )
+        self.sample = sample
 
     def __call__(
         self,
@@ -42,7 +48,10 @@ class GreedyLMProbsCalculator(StatCalculator):
                 - 'greedy_lm_log_likelihoods' (List[List[float]]): log-probabilities of generating text without input.
                     P(y_t | y_<t) for all t.
         """
-        tokens = dependencies["greedy_tokens"]
+        if self.sample:
+            tokens = dependencies["sgreedy_tokens"]
+        else:
+            tokens = dependencies["greedy_tokens"]
         try:
             batch = model.tokenize([model.tokenizer.decode(t) for t in tokens])
             batch = {k: v.to(model.device()) for k, v in batch.items()}
@@ -90,6 +99,12 @@ class GreedyLMProbsCalculator(StatCalculator):
                 greedy_lm_ll.append(
                     [logprobs[-len(toks) + j, toks[j]].item() for j in range(len(toks))]
                 )
+
+        if self.sample:
+            return {
+                "sgreedy_lm_log_probs": greedy_lm_log_probs,
+                "sgreedy_lm_log_likelihoods": greedy_lm_ll,
+            }
         return {
             "greedy_lm_log_probs": greedy_lm_log_probs,
             "greedy_lm_log_likelihoods": greedy_lm_ll,

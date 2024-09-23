@@ -19,6 +19,6 @@ from .model_score import ModelScoreCalculator
 from .embeddings import EmbeddingsCalculator
 from .ensemble_token_data import EnsembleTokenLevelDataCalculator
 from .semantic_matrix import SemanticMatrixCalculator
-from .cross_encoder_similarity import CrossEncoderSimilarityMatrixCalculator
+from .cross_encoder_similarity import CrossEncoderSimilarityMatrixCalculator, TokenCrossEncoderSimilarityMatrixCalculator
 from .extract_claims import ClaimsExtractor
 from .semantic_classes import SemanticClassesCalculator

@@ -14,7 +14,7 @@ class BlackboxGreedyTextsCalculator(StatCalculator):
     """
 
     def __init__(self):
-        super().__init__(["greedy_texts"], [])
+        super().__init__(["greedy_texts"], ["input_texts"])
 
     def __call__(
         self,
@@ -54,20 +54,34 @@ class GreedyProbsCalculator(StatCalculator):
     * embeddings from the model
     """
 
-    def __init__(self, n_alternatives: int = 10):
-        super().__init__(
-            [
-                "input_tokens",
-                "greedy_log_probs",
-                "greedy_tokens",
-                "greedy_tokens_alternatives",
-                "greedy_texts",
-                "greedy_log_likelihoods",
-                "train_greedy_log_likelihoods",
-                "embeddings",
-            ],
-            [],
-        )
+    def __init__(self, n_alternatives: int = 10, sample: bool = False):
+        if sample:
+            super().__init__(
+                [
+                    "sgreedy_log_probs",
+                    "sgreedy_tokens",
+                    "sgreedy_tokens_alternatives",
+                    "sgreedy_texts",
+                    "sgreedy_log_likelihoods",
+                    "strain_greedy_log_likelihoods",
+                    "sembeddings",
+                ],
+                ["input_texts"],
+            )
+        else:
+            super().__init__(
+                [
+                    "greedy_log_probs",
+                    "greedy_tokens",
+                    "greedy_tokens_alternatives",
+                    "greedy_texts",
+                    "greedy_log_likelihoods",
+                    "train_greedy_log_likelihoods",
+                    "embeddings",
+                ],
+                ["input_texts"],
+            )
+        self.sample = sample
         self.n_alternatives = n_alternatives
 
     def __call__(
@@ -104,6 +118,7 @@ class GreedyProbsCalculator(StatCalculator):
                 return_dict_in_generate=True,
                 max_new_tokens=max_new_tokens,
                 min_new_tokens=2,
+                do_sample=self.sample,
                 output_attentions=False,
                 output_hidden_states=True,
                 num_return_sequences=1,
@@ -163,26 +178,47 @@ class GreedyProbsCalculator(StatCalculator):
             assert len(tokens) == len(log_probs)
             ll.append([log_probs[j, tokens[j]] for j in range(len(log_probs))])
 
-        if model.model_type == "CausalLM":
-            embeddings_dict = {
-                "embeddings_decoder": embeddings_decoder,
-            }
-        elif model.model_type == "Seq2SeqLM":
-            embeddings_dict = {
-                "embeddings_encoder": embeddings_encoder,
-                "embeddings_decoder": embeddings_decoder,
-            }
-        else:
-            raise NotImplementedError
+        if self.sample:
+            if model.model_type == "CausalLM":
+                embeddings_dict = {
+                    "sembeddings_decoder": embeddings_decoder,
+                }
+            elif model.model_type == "Seq2SeqLM":
+                embeddings_dict = {
+                    "sembeddings_encoder": embeddings_encoder,
+                    "sembeddings_decoder": embeddings_decoder,
+                }
+            else:
+                raise NotImplementedError
 
-        result_dict = {
-            "input_tokens": batch["input_ids"].to("cpu").tolist(),
-            "greedy_log_probs": cut_logits,
-            "greedy_tokens": cut_sequences,
-            "greedy_tokens_alternatives": cut_alternatives,
-            "greedy_texts": cut_texts,
-            "greedy_log_likelihoods": ll,
-        }
-        result_dict.update(embeddings_dict)
+            result_dict = {
+                "sgreedy_log_probs": cut_logits,
+                "sgreedy_tokens": cut_sequences,
+                "sgreedy_tokens_alternatives": cut_alternatives,
+                "sgreedy_texts": cut_texts,
+                "sgreedy_log_likelihoods": ll,
+            }
+            result_dict.update(embeddings_dict)
+        else:
+            if model.model_type == "CausalLM":
+                embeddings_dict = {
+                    "embeddings_decoder": embeddings_decoder,
+                }
+            elif model.model_type == "Seq2SeqLM":
+                embeddings_dict = {
+                    "embeddings_encoder": embeddings_encoder,
+                    "embeddings_decoder": embeddings_decoder,
+                }
+            else:
+                raise NotImplementedError
+
+            result_dict = {
+                "greedy_log_probs": cut_logits,
+                "greedy_tokens": cut_sequences,
+                "greedy_tokens_alternatives": cut_alternatives,
+                "greedy_texts": cut_texts,
+                "greedy_log_likelihoods": ll,
+            }
+            result_dict.update(embeddings_dict)
 
         return result_dict

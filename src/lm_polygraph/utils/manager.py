@@ -54,6 +54,7 @@ def _order_calculators(
             ordered.append(stat)
             for new_stat in stat_calculators[stat].stats:
                 have_stats.add(new_stat)
+
     return ordered, have_stats
 
 

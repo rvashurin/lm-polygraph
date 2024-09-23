@@ -11,8 +11,12 @@ class EntropyCalculator(StatCalculator):
     Calculates entropy of probabilities at each token position in the generation of a Whitebox model.
     """
 
-    def __init__(self):
-        super().__init__(["entropy"], ["greedy_log_probs"])
+    def __init__(self, sample: bool = False):
+        if sample:
+            super().__init__(["sentropy"], ["sgreedy_log_probs"])
+        else:
+            super().__init__(["entropy"], ["greedy_log_probs"])
+        self.sample = sample
 
     def __call__(
         self,
@@ -34,11 +38,16 @@ class EntropyCalculator(StatCalculator):
         Returns:
             Dict[str, np.ndarray]: dictionary with List[List[float]] entropies calculated at 'entropy' key.
         """
-        logprobs = dependencies["greedy_log_probs"]
+        if self.sample:
+            logprobs = dependencies["sgreedy_log_probs"]
+        else:
+            logprobs = dependencies["greedy_log_probs"]
         entropies = []
         for s_lp in logprobs:
             entropies.append([])
             for lp in s_lp:
                 mask = ~np.isinf(lp)
                 entropies[-1].append(-np.sum(np.array(lp[mask]) * np.exp(lp[mask])))
+        if self.sample:
+            return {"sentropy": entropies}
         return {"entropy": entropies}

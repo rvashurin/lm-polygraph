@@ -8,16 +8,19 @@ from .claim.pointwise_mutual_information import PointwiseMutualInformationClaim
 from .max_probability import (
     MaximumSequenceProbability,
     MaximumTokenProbability,
+    MaximumSequenceProbabilitySample,
 )
 from .claim_conditioned_probability import ClaimConditionedProbability
-from .token_entropy import MeanTokenEntropy, TokenEntropy
+from .token_entropy import MeanTokenEntropy, TokenEntropy, MeanTokenEntropySample
 from .pointwise_mutual_information import (
     MeanPointwiseMutualInformation,
     PointwiseMutualInformation,
+    MeanPointwiseMutualInformationSample,
 )
 from .conditional_pointwise_mutual_information import (
     MeanConditionalPointwiseMutualInformation,
     ConditionalPointwiseMutualInformation,
+    MeanConditionalPointwiseMutualInformationSample,
 )
 from .p_true import PTrue
 from .p_true_sampling import PTrueSampling
@@ -30,7 +33,7 @@ from .eig_val_laplacian import EigValLaplacian
 from .num_sem_sets import NumSemSets
 from .semantic_entropy import SemanticEntropy
 from .semantic_entropy_token import SemanticEntropyToken
-from .perplexity import Perplexity
+from .perplexity import Perplexity, PerplexitySample
 from .mahalanobis_distance import MahalanobisDistanceSeq
 from .relative_mahalanobis_distance import RelativeMahalanobisDistanceSeq
 from .rde import RDESeq
@@ -61,7 +64,7 @@ from .ensemble_sequence_measures import (
     PESrmi,
     PESrmiabs,
 )
-from .token_sar import TokenSAR
+from .token_sar import TokenSAR, TokenSARSample
 from .sentence_sar import SentenceSAR
 from .sar import SAR
 from .renyi_neg import RenyiNeg
