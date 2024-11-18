@@ -45,7 +45,6 @@ use_density_based_ue: false
 use_ens_ue: false
 use_seq_ue: true
 use_tok_ue: false
-generation_metrics: null
 
 # Examples of providing additional UE methods:
 # additional_estimators: {
@@ -57,10 +56,15 @@ generation_metrics: null
 #   'EigValLaplacian': {'similarity_score': 'NLI_score', 'affinity': 'entail'}
 # }
 
+generation_metrics:
+  - name: 'RougeMetric'
+    args:
+      - 'rougeL'
+
 ignore_exceptions: false
 
 batch_size: 1
-deberta_batch_size: 10
+deberta_batch_size: 1
 
 seed:
     - 1

@@ -56,10 +56,15 @@ use_tok_ue: false
 #   'EigValLaplacian': {'similarity_score': 'NLI_score', 'affinity': 'entail'}
 # }
 
+generation_metrics:
+  - name: 'RougeMetric'
+    args:
+      - 'rougeL'
+
 ignore_exceptions: false
 
 batch_size: 1
-deberta_batch_size: 10
+deberta_batch_size: 1
 
 seed:
     - 1
