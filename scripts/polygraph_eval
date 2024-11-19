@@ -194,6 +194,7 @@ def main(args):
                 Logger(),
             ],
             deberta_batch_size=getattr(args, 'deberta_batch_size', 10),
+            deberta_device=getattr(args, 'deberta_device', None),
             train_data=train_dataset,
             ignore_exceptions=args.ignore_exceptions,
             background_train_data=background_train_dataset,
