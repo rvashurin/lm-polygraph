@@ -89,6 +89,8 @@ def main(args):
         )
         log.info("Done with loading eval data.")
 
+        if args.subsample_eval_dataset != -1:
+            dataset.subsample(args.subsample_eval_dataset, seed=seed)
 
         tokenized_inputs = []
         for inp in dataset.y:
