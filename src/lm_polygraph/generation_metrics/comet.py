@@ -59,7 +59,7 @@ class Comet(GenerationMetric):
             for src in stats["input_texts"]
         ]
         data = []
-        for original, translation, reference in zip(sources, stats["greedy_texts"], target_texts):
+        for original, translation, reference in zip(sources, stats["greedy_texts"], stats["target_texts"]):
             data.append({'src': original, 'mt': translation, 'ref': reference})
 
         scores = self.scorer.predict(data, batch_size=1, gpus=1)
