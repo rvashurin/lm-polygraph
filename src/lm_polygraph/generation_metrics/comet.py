@@ -14,7 +14,7 @@ class Comet(GenerationMetric):
     between model-generated texts and ground truth texts.
     """
 
-    def __init__(self, source_ignore_regex=None, lang="en"):
+    def __init__(self, source_ignore_regex=None, lang="en", gpu =1):
         super().__init__(["greedy_texts", "input_texts"], "sequence")
         model_path = download_model("Unbabel/wmt22-comet-da")  
         self.scorer = load_from_checkpoint(model_path)
@@ -22,6 +22,7 @@ class Comet(GenerationMetric):
         self.source_ignore_regex = (
             re.compile(source_ignore_regex) if source_ignore_regex else None
         )
+        self.gpu = gpu
 
     def __str__(self):
         return "Comet"
@@ -62,5 +63,5 @@ class Comet(GenerationMetric):
         for original, translation, reference in zip(sources, stats["greedy_texts"], stats["target_texts"]):
             data.append({'src': original, 'mt': translation, 'ref': reference})
 
-        scores = self.scorer.predict(data, batch_size=1, gpus=1)
+        scores = self.scorer.predict(data, batch_size=1, gpus=self.gpu).scores
         return scores
