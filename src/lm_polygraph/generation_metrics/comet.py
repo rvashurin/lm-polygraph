@@ -18,7 +18,6 @@ class Comet(GenerationMetric):
         super().__init__(["greedy_texts", "input_texts"], "sequence")
         model_path = download_model("Unbabel/wmt22-comet-da")  
         self.scorer = load_from_checkpoint(model_path)
-
         self.source_ignore_regex = (
             re.compile(source_ignore_regex) if source_ignore_regex else None
         )
@@ -37,6 +36,10 @@ class Comet(GenerationMetric):
                     f"Source text {text} does not match the ignore regex {ignore_regex}"
                 )
         return text
+    
+    def _extract_source(self, text: str) -> str:
+        match = re.search(r"Original:\s*(.*?)\s*Translation:", text, re.DOTALL)
+        return match.group(1).strip() if match else ""
 
     def __call__(
         self,
@@ -56,12 +59,13 @@ class Comet(GenerationMetric):
             np.ndarray: list of COMET Scores for each sample in input.
         """
         sources = [
-            self._filter_text(src, self.source_ignore_regex)
+            self._extract_source(src)
             for src in stats["input_texts"]
         ]
         data = []
         for original, translation, reference in zip(sources, stats["greedy_texts"], stats["target_texts"]):
             data.append({'src': original, 'mt': translation, 'ref': reference})
+
 
         scores = self.scorer.predict(data, batch_size=1, gpus=self.gpu).scores
         return scores
