@@ -43,7 +43,7 @@ def main(args):
 
     if args.seed is None or len(args.seed) == 0:
         args.seed = [1]
-
+    # print("Hellooooo: ",getattr(args, "comet_gpu", None), type(getattr(args, "comet_gpu", None)))
     cache_kwargs = {}
     if os.environ.get('HF_DATASETS_OFFLINE', '').strip() == '1':
         cache_kwargs = {'cache_dir': args.cache_path}
@@ -93,6 +93,7 @@ def main(args):
             **cache_kwargs
         )
         log.info("Done with loading eval data.")
+
 
         log.info("="*100)
         log.info("Initializing UE estimators...")
@@ -403,14 +404,14 @@ def get_generation_metrics(args):
                 result += [OpenAIFactCheck(cache_path=args.cache_path, language=getattr(args, "language", "en"))]
         if args.task == "nmt":
             ignore_regex = getattr(args, "source_ignore_regex", None)
-            result += [Comet(source_ignore_regex = ignore_regex)]
+            num_gpus = getattr(args, "comet_gpus", 0)
+            result += [Comet(source_ignore_regex = ignore_regex, gpus=num_gpus)]
     else:
         result = []
         for metric in generation_metrics:
             metric_name = metric["name"]
             metric_class = globals()[metric_name]
             metric_args = metric.get("args", [])
-            result.append(metric_class(*metric_args))
 
     process_output_fn = getattr(args, "process_output_fn", None)
     process_target_fn = getattr(args, "process_target_fn", None)

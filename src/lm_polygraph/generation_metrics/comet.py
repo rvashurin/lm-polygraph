@@ -1,9 +1,10 @@
 import re
 import numpy as np
-from evaluate import load
 
 from typing import List, Dict
 from .generation_metric import GenerationMetric
+
+from comet import download_model, load_from_checkpoint
 
 
 class Comet(GenerationMetric):
@@ -12,12 +13,14 @@ class Comet(GenerationMetric):
     between model-generated texts and ground truth texts.
     """
 
-    def __init__(self, source_ignore_regex=None, lang="en"):
+    def __init__(self, source_ignore_regex=None, gpus=0):
         super().__init__(["greedy_texts", "input_texts"], "sequence")
-        self.scorer = load("comet")
+        model_path = download_model("Unbabel/wmt22-comet-da")  
+        self.scorer = load_from_checkpoint(model_path)
         self.source_ignore_regex = (
             re.compile(source_ignore_regex) if source_ignore_regex else None
         )
+        self.gpus = gpus
 
     def __str__(self):
         return "Comet"
@@ -54,11 +57,10 @@ class Comet(GenerationMetric):
             self._filter_text(src, self.source_ignore_regex)
             for src in stats["input_texts"]
         ]
-        scores = np.array(
-            self.scorer.compute(
-                predictions=stats["greedy_texts"],
-                references=target_texts,
-                sources=sources,
-            )["scores"]
-        )
+
+        data = []
+        for original, translation, reference in zip(sources, stats["greedy_texts"], stats["target_texts"]):
+            data.append({'src': original, 'mt': translation, 'ref': reference})
+
+        scores = self.scorer.predict(data, batch_size=1, gpus=self.gpus).scores
         return scores

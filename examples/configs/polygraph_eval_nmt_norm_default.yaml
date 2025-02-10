@@ -24,6 +24,7 @@ load_from_disk: false
 generation_params:
   generate_until:
     - "\n"
+comet_gpus: 1
 
 source_ignore_regex: "(?s).*Original:\n(.*?)\nTranslation:\n"
 
