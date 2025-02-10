@@ -404,17 +404,14 @@ def get_generation_metrics(args):
                 result += [OpenAIFactCheck(cache_path=args.cache_path, language=getattr(args, "language", "en"))]
         if args.task == "nmt":
             ignore_regex = getattr(args, "source_ignore_regex", None)
-            result += [Comet(source_ignore_regex = ignore_regex)]
+            num_gpus = getattr(args, "comet_gpus", 0)
+            result += [Comet(source_ignore_regex = ignore_regex, gpus=num_gpus)]
     else:
         result = []
         for metric in generation_metrics:
             metric_name = metric["name"]
             metric_class = globals()[metric_name]
             metric_args = metric.get("args", [])
-            if metric_name=='Comet' and getattr(args, "comet_gpu", None):
-                result.append(metric_class(*metric_args),getattr(args, "comet_gpu", None))
-            else:
-                result.append(metric_class(*metric_args))
 
     process_output_fn = getattr(args, "process_output_fn", None)
     process_target_fn = getattr(args, "process_target_fn", None)

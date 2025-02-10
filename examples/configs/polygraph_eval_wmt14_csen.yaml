@@ -8,4 +8,3 @@ label_column: en
 train_split: train
 eval_split: test
 max_new_tokens: 81
-comet_gpus: 1
