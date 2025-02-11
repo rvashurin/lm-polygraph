@@ -18,6 +18,7 @@ def register_stat_calculators(
     n_ccp_alternatives: int = 10,
     cache_path=os.path.expanduser("~") + "/.cache",
     model: Model = None,
+    top_k: int = None
 ) -> Tuple[Dict[str, "StatCalculator"], Dict[str, List[str]]]:
     """
     Registers all available statistic calculators to be seen by UEManager for properly organizing the calculations
@@ -62,7 +63,7 @@ def register_stat_calculators(
         _register(BlackboxSamplingGenerationCalculator())
     else:
         _register(GreedyProbsCalculator(n_alternatives=n_ccp_alternatives))
-        _register(EntropyCalculator())
+        _register(EntropyCalculator(top_k=top_k))
         _register(GreedyLMProbsCalculator())
         _register(SamplingGenerationCalculator())
         _register(BartScoreCalculator())

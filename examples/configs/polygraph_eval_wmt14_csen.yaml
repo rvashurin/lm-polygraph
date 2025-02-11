@@ -21,6 +21,7 @@ train_split: train
 eval_split: test
 max_new_tokens: 81
 load_from_disk: false
+entropy_top_k: 5
 comet_gpu: 1
 generation_params:
   generate_until:

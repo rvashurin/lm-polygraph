@@ -256,7 +256,7 @@ class UEManager:
         max_new_tokens: int = 100,
         background_train_dataset_max_new_tokens: int = 100,
         cache_path=os.path.expanduser("~") + "/.cache",
-    ):
+        entropy_top_k: Optional[int] = None,    ):
         """
         Parameters:
             data (Dataset): Dataset to run benchmark on.
@@ -285,6 +285,7 @@ class UEManager:
             language=language,
             cache_path=cache_path,
             model=model,
+            top_k=entropy_top_k,
         )
 
         self.stat_calculators_dict = stat_calculators_dict
@@ -297,6 +298,7 @@ class UEManager:
         self.estimators: List[Estimator] = estimators
         self.generation_metrics: List[GenerationMetric] = generation_metrics
         self.ue_metrics: List[UEMetric] = ue_metrics
+        self.entropy_top_k=entropy_top_k
         _check_unique_names(generation_metrics)
         _check_unique_names(estimators)
         _check_unique_names(ue_metrics)
@@ -553,6 +555,11 @@ class UEManager:
         """
         for stat_calculator in calculators:
             try:
+                # try:
+                #     new_stats = stat_calculator(
+                #         batch_stats, inp_texts, self.model, self.max_new_tokens, self.entropy_top_k
+                #     )
+                # except:
                 new_stats = stat_calculator(
                     batch_stats, inp_texts, self.model, self.max_new_tokens
                 )
