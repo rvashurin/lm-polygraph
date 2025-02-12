@@ -4,6 +4,8 @@ from typing import Dict, List
 
 from .stat_calculator import StatCalculator
 from lm_polygraph.utils.model import WhiteboxModel
+import torch
+from torch.nn import functional as F
 
 
 class EntropyCalculator(StatCalculator):
@@ -11,7 +13,8 @@ class EntropyCalculator(StatCalculator):
     Calculates entropy of probabilities at each token position in the generation of a Whitebox model.
     """
 
-    def __init__(self):
+    def __init__(self, top_k: int = None,):
+        self.top_k = top_k
         super().__init__(["entropy"], ["greedy_log_probs"])
 
     def __call__(
@@ -39,6 +42,8 @@ class EntropyCalculator(StatCalculator):
         for s_lp in logprobs:
             entropies.append([])
             for lp in s_lp:
-                mask = ~np.isinf(lp)
-                entropies[-1].append(-np.sum(np.array(lp[mask]) * np.exp(lp[mask])))
+                lp = torch.tensor(lp)
+                if self.top_k is not None:
+                    lp = torch.topk(lp, self.top_k).values
+                entropies[-1].append(torch.distributions.Categorical(logits=lp).entropy().item())
         return {"entropy": entropies}
