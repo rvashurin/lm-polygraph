@@ -256,6 +256,7 @@ class UEManager:
         max_new_tokens: int = 100,
         background_train_dataset_max_new_tokens: int = 100,
         cache_path=os.path.expanduser("~") + "/.cache",
+        entropy_top_k: Optional[int] = None,
     ):
         """
         Parameters:
@@ -285,10 +286,10 @@ class UEManager:
             language=language,
             cache_path=cache_path,
             model=model,
+            entropy_top_k= entropy_top_k,
         )
 
         self.stat_calculators_dict = stat_calculators_dict
-
         self.model: Model = model
         self.train_data: Dataset = train_data
         self.background_train_data: Dataset = background_train_data
