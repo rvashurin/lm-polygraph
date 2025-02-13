@@ -1,0 +1,16 @@
+defaults:
+  - polygraph_eval_nmt_norm_default
+  - _self_
+
+dataset: [wmt14, cs-en]
+text_column: cs
+label_column: en
+train_split: train
+eval_split: test
+few_shot_split: validation
+n_shot: 5
+instruct: true
+max_new_tokens: 81
+
+prompt: "Translate following sentence from {source_lang} language to {target_lang} language.\n\nOriginal: {text}"
+source_ignore_regex: ".*Original: (.*?)<"

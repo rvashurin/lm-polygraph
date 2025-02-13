@@ -27,14 +27,12 @@ class Comet(GenerationMetric):
 
     def _filter_text(self, text: str, ignore_regex: re.Pattern) -> str:
         if ignore_regex is not None:
-            processed_text = ignore_regex.search(text)
-            if processed_text:
-                return processed_text.group(1)
-            else:
+            try:
+                return ignore_regex.findall(text)[-1]
+            except IndexError:
                 raise ValueError(
                     f"Source text {text} does not match the ignore regex {ignore_regex}"
                 )
-        return text
 
     def __call__(
         self,

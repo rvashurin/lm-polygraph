@@ -217,7 +217,10 @@ class Dataset:
 
             for inst in dataset["translation"]:
                 if instruct:
-                    formatted_texts = [{"role": "system", "content": ''}]
+                    formatted_texts = [{
+                        "role": "system",
+                        "content": f'You are a translator from {source_lang} to {target_lang}. You output the word "Translation: " followed by the translation of the input text, notheing else.',
+                    }]
                     for few_shot in few_shot_text:
                         formatted_prompt = prompt.format(
                             source_lang=source_lang,
@@ -226,7 +229,7 @@ class Dataset:
                         )
                         formatted_texts.extend([
                             {"role": "user", "content": formatted_prompt},
-                            {"role": "assistant", "content": few_shot[y_column]}
+                            {"role": "assistant", "content": f'Translation: {few_shot[y_column]}'}
                         ])
 
                     formatted_prompt = prompt.format(
@@ -234,9 +237,9 @@ class Dataset:
                         target_lang=target_lang,
                         text=inst[x_column],
                     )
-                    formatted_texts.extend([
-                        {"role": "user", "content": formatted_prompt}
-                    ])
+                    formatted_texts.append({
+                        "role": "user", "content": formatted_prompt
+                    })
                     formatted_chat = tokenizer.apply_chat_template(
                         formatted_texts, add_generation_prompt=True, tokenize=False
                     )
