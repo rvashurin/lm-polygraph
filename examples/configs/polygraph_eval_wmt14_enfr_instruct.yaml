@@ -2,10 +2,10 @@ defaults:
   - polygraph_eval_nmt_norm_default_instruct
   - _self_
 
-dataset: [wmt14, cs-en]
-text_column: cs
-label_column: en
+dataset: [wmt14, fr-en]
+text_column: en
+label_column: fr
 train_split: train
 eval_split: test
 few_shot_split: validation
-max_new_tokens: 81
+max_new_tokens: 182 
