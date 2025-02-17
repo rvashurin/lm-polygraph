@@ -13,19 +13,22 @@ class Comet(GenerationMetric):
     between model-generated texts and ground truth texts.
     """
 
-    def __init__(self, source_ignore_regex=None, gpus=0):
+    def __init__(self, source_ignore_regex=None, translation_ignore_regex=None, gpus=0):
         super().__init__(["greedy_texts", "input_texts"], "sequence")
         model_path = download_model("Unbabel/wmt22-comet-da")  
         self.scorer = load_from_checkpoint(model_path)
         self.source_ignore_regex = (
             re.compile(source_ignore_regex) if source_ignore_regex else None
         )
+        self.translation_ignore_regex = (
+            re.compile(translation_ignore_regex) if translation_ignore_regex else None
+        )
         self.gpus = gpus
 
     def __str__(self):
         return "Comet"
 
-    def _filter_text(self, text: str, ignore_regex: re.Pattern) -> str:
+    def _filter_source(self, text: str, ignore_regex: re.Pattern) -> str:
         if ignore_regex is not None:
             try:
                 return ignore_regex.findall(text)[-1]
@@ -33,6 +36,11 @@ class Comet(GenerationMetric):
                 raise ValueError(
                     f"Source text {text} does not match the ignore regex {ignore_regex}"
                 )
+
+    def _filter_translation(self, text: str, ignore_regex: re.Pattern) -> str:
+        text = ignore_regex.sub("", text) if ignore_regex else text
+
+        return text.strip()
 
     def __call__(
         self,
@@ -52,12 +60,16 @@ class Comet(GenerationMetric):
             np.ndarray: list of COMET Scores for each sample in input.
         """
         sources = [
-            self._filter_text(src, self.source_ignore_regex)
+            self._filter_source(src, self.source_ignore_regex)
             for src in stats["input_texts"]
+        ]
+        translations = [
+            self._filter_translation(tr, self.translation_ignore_regex)
+            for tr in stats["greedy_texts"]
         ]
 
         data = []
-        for original, translation, reference in zip(sources, stats["greedy_texts"], stats["target_texts"]):
+        for original, translation, reference in zip(sources, translations, stats["target_texts"]):
             data.append({'src': original, 'mt': translation, 'ref': reference})
 
         scores = self.scorer.predict(data, batch_size=1, gpus=self.gpus).scores

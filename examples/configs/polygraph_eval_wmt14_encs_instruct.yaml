@@ -8,4 +8,5 @@ label_column: cs
 train_split: train
 eval_split: test
 few_shot_split: validation
-max_new_tokens: 171 
+max_new_tokens: 171
+translation_ignore_regex: "(?s).*Translation:" 
