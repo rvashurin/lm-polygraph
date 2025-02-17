@@ -1,0 +1,12 @@
+defaults:
+  - polygraph_eval_nmt_norm_default_instruct
+  - _self_
+
+dataset: [wmt19, fi-en]
+text_column: fi
+label_column: en
+train_split: train
+eval_split: validation
+few_shot_split: train
+max_new_tokens: 202
+translation_ignore_regex: "(?s).*Translation:" 

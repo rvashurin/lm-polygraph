@@ -177,6 +177,7 @@ class Dataset:
         instruct: bool = False,
         split: str = "test",
         size: int = None,
+        tokenizer = None,
         **kwargs,
     ):
         """
@@ -208,15 +209,51 @@ class Dataset:
             source_lang = ABBR_TO_LANG[x_column]
             target_lang = ABBR_TO_LANG[y_column]
 
+            if n_shot > 0:
+                few_shot_text = few_shot_dataset.select(
+                    np.random.choice(len(few_shot_dataset), n_shot, replace=False)
+                )
+                few_shot_text = few_shot_text["translation"]
+
             for inst in dataset["translation"]:
-                x.append(
-                    prompt.format(
+                if instruct:
+                    formatted_texts = [{
+                        "role": "system",
+                        "content": f'You are a translator from {source_lang} to {target_lang}. You output the word "Translation: " followed by the translation of the input text, notheing else.',
+                    }]
+                    for few_shot in few_shot_text:
+                        formatted_prompt = prompt.format(
+                            source_lang=source_lang,
+                            target_lang=target_lang,
+                            text=few_shot[x_column],
+                        )
+                        formatted_texts.extend([
+                            {"role": "user", "content": formatted_prompt},
+                            {"role": "assistant", "content": f'Translation: {few_shot[y_column]}'}
+                        ])
+
+                    formatted_prompt = prompt.format(
                         source_lang=source_lang,
                         target_lang=target_lang,
                         text=inst[x_column],
                     )
-                )
-                y.append(inst[y_column])
+                    formatted_texts.append({
+                        "role": "user", "content": formatted_prompt
+                    })
+                    formatted_chat = tokenizer.apply_chat_template(
+                        formatted_texts, add_generation_prompt=True, tokenize=False
+                    )
+                    x.append(formatted_chat)
+                    y.append(inst[y_column])
+                else:
+                    x.append(
+                        prompt.format(
+                            source_lang=source_lang,
+                            target_lang=target_lang,
+                            text=inst[x_column],
+                        )
+                    )
+                    y.append(inst[y_column])
         elif ("xsum" in dataset_name.lower()) and len(prompt):
             x, y = [], []
             for inst in dataset:

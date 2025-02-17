@@ -1,0 +1,8 @@
+defaults:
+  - polygraph_eval_nmt_norm_default
+  - _self_
+
+prompt: "Translate following sentence from {source_lang} language to {target_lang} language.\n\nOriginal: {text}"
+source_ignore_regex: "(?s).*Original: (.*?)<"
+instruct: true
+n_shot: 5
