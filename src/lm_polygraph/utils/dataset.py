@@ -221,16 +221,17 @@ class Dataset:
                         "role": "system",
                         "content": f'You are a translator from {source_lang} to {target_lang}. You output the word "Translation: " followed by the translation of the input text, notheing else.',
                     }]
-                    for few_shot in few_shot_text:
-                        formatted_prompt = prompt.format(
-                            source_lang=source_lang,
-                            target_lang=target_lang,
-                            text=few_shot[x_column],
-                        )
-                        formatted_texts.extend([
-                            {"role": "user", "content": formatted_prompt},
-                            {"role": "assistant", "content": f'Translation: {few_shot[y_column]}'}
-                        ])
+                    if n_shot > 0:
+                        for few_shot in few_shot_text:
+                            formatted_prompt = prompt.format(
+                                source_lang=source_lang,
+                                target_lang=target_lang,
+                                text=few_shot[x_column],
+                            )
+                            formatted_texts.extend([
+                                {"role": "user", "content": formatted_prompt},
+                                {"role": "assistant", "content": f'Translation: {few_shot[y_column]}'}
+                            ])
 
                     formatted_prompt = prompt.format(
                         source_lang=source_lang,
@@ -303,6 +304,7 @@ class Dataset:
                             few_shot_section = "\n\n"
                     else:
                         few_shot_section = doc_to_text(inst, prompt, j) + "\n\n"
+
                     formatted_prompt = (
                         formatted_description
                         + few_shot_section
