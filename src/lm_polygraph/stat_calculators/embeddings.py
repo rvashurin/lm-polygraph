@@ -24,14 +24,14 @@ def get_embeddings_from_output(
     if model_type == "CausalLM":
         if not all_layers:
             hidden_layer = -1
-            input_tokens_hs = output.hidden_states[0][hidden_layer].cpu().detach()
+            input_tokens_hs = output.hidden_states[0][hidden_layer].to(torch.float32).cpu().detach()
             if len(output.hidden_states) > 1:
                 generated_tokens_hs = torch.cat(
                     [h[hidden_layer].cpu().detach() for h in output.hidden_states[1:]],
                     dim=1,
                 )
         else:
-            input_tokens_hs = output.hidden_states[0].mean(axis=0).cpu().detach()
+            input_tokens_hs = output.hidden_states[0].mean(axis=0).to(torch.float32).cpu().detach()
             if len(output.hidden_states) > 1:
                 generated_tokens_hs = torch.cat(
                     [h.mean(axis=0).cpu().detach() for h in output.hidden_states[1:]],
@@ -45,7 +45,7 @@ def get_embeddings_from_output(
                 .detach()
             )
         else:
-            batch_embeddings_decoder = input_tokens_hs.mean(axis=1).cpu().detach()
+            batch_embeddings_decoder = input_tokens_hs.mean(axis=1).to(torch.float32).cpu().detach()
         batch_embeddings = None
     elif model_type == "Seq2SeqLM":
         if use_averaging:
@@ -140,7 +140,7 @@ def get_embeddings_from_output(
                     .detach()
                 )
             if "encoder" in hidden_state:
-                batch_embeddings = output.encoder_hidden_states[-1][:, 0].cpu().detach()
+                batch_embeddings = output.encoder_hidden_states[-1][:, 0].to(torch.float32).cpu().detach()
             if not ("encoder" in hidden_state) and not ("decoder" in hidden_state):
                 raise NotImplementedError
     else:
@@ -199,12 +199,12 @@ class EmbeddingsCalculator(StatCalculator):
 
         if model.model_type == "CausalLM":
             return {
-                "embeddings_decoder": embeddings_decoder.cpu().detach().numpy(),
+                "embeddings_decoder": embeddings_decoder.to(torch.float32).cpu().detach().numpy(),
             }
         elif model.model_type == "Seq2SeqLM":
             return {
-                "embeddings_encoder": embeddings_encoder.cpu().detach().numpy(),
-                "embeddings_decoder": embeddings_decoder.cpu().detach().numpy(),
+                "embeddings_encoder": embeddings_encoder.to(torch.float32).cpu().detach().numpy(),
+                "embeddings_decoder": embeddings_decoder.to(torch.float32).cpu().detach().numpy(),
             }
         else:
             raise NotImplementedError
