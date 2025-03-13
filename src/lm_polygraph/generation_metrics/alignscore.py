@@ -18,6 +18,7 @@ class AlignScore(GenerationMetric):
         ckpt_path="https://huggingface.co/yzha/AlignScore/resolve/main/AlignScore-large.ckpt",
         batch_size=16,
         target_is_claims=True,
+        ignore_target=False,
     ):
         super().__init__(["greedy_texts", "input_texts"], "sequence")
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -30,10 +31,15 @@ class AlignScore(GenerationMetric):
             ckpt_path=ckpt_path,
             evaluation_mode="nli_sp",
         )
+        self.ignore_target = ignore_target
 
     def __str__(self):
-        return "AlignScore"
+        base = "AlignScore"
+        if self.ignore_target:
+            base += "InputOutput"
 
+        return base
+    
     def __call__(
         self,
         stats: Dict[str, np.ndarray],
@@ -51,16 +57,20 @@ class AlignScore(GenerationMetric):
             np.ndarray: list of AlignScore Scores for each sample in input.
         """
         greedy_texts = stats["greedy_texts"]
-
+        input_texts = stats["input_texts"]
         filtered_targets = [x if len(x.strip()) else "(empty)" for x in target_texts]
         filtered_outputs = [x if len(x.strip()) else "(empty)" for x in greedy_texts]
-
-        if self.target_is_claims:
-            claims = filtered_targets
-            contexts = filtered_outputs
-        else:
+        filtered_inputs = [x if len(x.strip()) else "(empty)" for x in input_texts]
+        if self.ignore_target:
             claims = filtered_outputs
-            contexts = filtered_targets
+            contexts = filtered_inputs
+        else:
+            if self.target_is_claims:
+                claims = filtered_targets
+                contexts = filtered_outputs
+            else:
+                claims = filtered_outputs
+                contexts = filtered_targets
 
         scores = np.array(
             self.scorer.score(

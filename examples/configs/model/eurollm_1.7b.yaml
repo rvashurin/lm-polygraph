@@ -1,0 +1,11 @@
+defaults:
+  - default
+
+path: utter-project/EuroLLM-1.7B
+type: CausalLM
+path_to_load_script: model/default_causal.py
+
+load_model_args:
+  device_map: balanced_low_0
+  dtype: bfloat16
+load_tokenizer_args: {}
