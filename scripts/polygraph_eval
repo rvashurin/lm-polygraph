@@ -415,6 +415,7 @@ def get_generation_metrics(args):
             translation_ignore_regex = getattr(args, "translation_ignore_regex", None)
             num_gpus = getattr(args, "comet_gpus", 0)
             result += [Comet(source_ignore_regex = source_ignore_regex, translation_ignore_regex = translation_ignore_regex, gpus=num_gpus)]
+            result += [XMetric(source_ignore_regex = source_ignore_regex, translation_ignore_regex = translation_ignore_regex)]
     else:
         result = []
         for metric in generation_metrics:
