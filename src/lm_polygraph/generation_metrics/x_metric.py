@@ -11,7 +11,7 @@ from transformers import TrainingArguments, Trainer
 
 class XMetric(GenerationMetric):
     """
-    Calculates X-MERTIC (https://example.com/x-metric-paper)
+    Calculates X-MERTIC (https://aclanthology.org/2023.wmt-1.63/)
     between model-generated texts and ground truth texts.
     """
 
@@ -107,16 +107,16 @@ class XMetric(GenerationMetric):
         Returns:
             np.ndarray: list of X-MERTIC scores for each sample.
         """
-        sources = [
-            self._filter_source(src, self.source_ignore_regex)
-            for src in stats["input_texts"]
+        references = [
+            src
+            for src in stats["target_texts"]
         ]
         translations = [
             self._filter_translation(tr, self.translation_ignore_regex)
             for tr in stats["greedy_texts"]
         ]
 
-        inputs = self._prepare_inputs(translations, sources)
+        inputs = self._prepare_inputs(translations, references)
         scores, _, _ = self.trainer.predict(test_dataset=inputs)
         for i, score in enumerate(scores):
             scores[i] = (25 - score) / 25
