@@ -366,7 +366,7 @@ class WhiteboxModel(Model):
                     # Remove stop sequence from the begginning of the lookback tokens if it is there
                     if len(lookback_tokens_batch_i) >= len(self.sequence) and lookback_tokens_batch_i[: len(self.sequence)] == self.sequence:
                         lookback_tokens_batch_i = lookback_tokens_batch_i[len(self.sequence) :]
-                    self.done_tracker[i] = self.sequence in lookback_tokens_batch[i]
+                    self.done_tracker[i] = self.sequence in lookback_tokens_batch_i
             return False not in self.done_tracker
 
     def get_stopping_criteria(self, input_ids: torch.Tensor):
