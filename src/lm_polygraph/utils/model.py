@@ -362,6 +362,10 @@ class WhiteboxModel(Model):
 
             for i, done in enumerate(self.done_tracker):
                 if not done:
+                    lookback_tokens_batch_i = lookback_tokens_batch[i]
+                    # Remove stop sequence from the begginning of the lookback tokens if it is there
+                    if len(lookback_tokens_batch_i) >= len(self.sequence) and lookback_tokens_batch_i[: len(self.sequence)] == self.sequence:
+                        lookback_tokens_batch_i = lookback_tokens_batch_i[len(self.sequence) :]
                     self.done_tracker[i] = self.sequence in lookback_tokens_batch[i]
             return False not in self.done_tracker
 
