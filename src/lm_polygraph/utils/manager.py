@@ -703,7 +703,7 @@ class UEManager:
         Parameters:
             load_path (str): Path to file with saved benchmark results to load.
         """
-        res_dict = torch.load(load_path)
+        res_dict = torch.load(load_path, weights_only=False)
         man = UEManager(None, None, [], [], [], [])
         man.metrics = res_dict.get("metrics", None)
         man.gen_metrics = res_dict.get("gen_metrics", None)
