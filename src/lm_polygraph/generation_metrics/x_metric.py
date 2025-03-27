@@ -15,7 +15,7 @@ class XMetric(GenerationMetric):
     between model-generated texts and ground truth texts.
     """
 
-    def __init__(self, model_name_or_path="google/metricx-23-large-v2p0", tokenizer_name="google/mt5-large", 
+    def __init__(self, model_name_or_path="google/metricx-24-hybrid-large-v2p6", tokenizer_name="google/mt5-large", 
                  source_ignore_regex=None, translation_ignore_regex=None):
         super().__init__(["greedy_texts", "input_texts"], "sequence")
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -46,7 +46,7 @@ class XMetric(GenerationMetric):
 
 
     def __str__(self):
-        return "X-MERTIC"
+        return "metricx"
 
     def _filter_source(self, text: str, ignore_regex: re.Pattern) -> str:
         if ignore_regex is not None:
