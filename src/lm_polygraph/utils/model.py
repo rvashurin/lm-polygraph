@@ -553,16 +553,16 @@ class WhiteboxModel(Model):
             dict[str, torch.Tensor]: tensors dictionary obtained by tokenizing input texts batch.
         """
         # Apply chat template if tokenizer has it
-        if self.tokenizer.chat_template is not None:
-            formatted_texts = []
-            for chat in texts:
-                if isinstance(chat, str):
-                    chat = [{"role": "user", "content": chat}]
-                formatted_chat = self.tokenizer.apply_chat_template(
-                    chat, add_generation_prompt=True, tokenize=False
-                )
-                formatted_texts.append(formatted_chat)
-            texts = formatted_texts
+        #if self.tokenizer.chat_template is not None:
+        #    formatted_texts = []
+        #    for chat in texts:
+        #        if isinstance(chat, str):
+        #            chat = [{"role": "user", "content": chat}]
+        #        formatted_chat = self.tokenizer.apply_chat_template(
+        #            chat, add_generation_prompt=True, tokenize=False
+        #        )
+        #        formatted_texts.append(formatted_chat)
+        #    texts = formatted_texts
 
         return self.tokenizer(texts, padding=True, return_tensors="pt")
 

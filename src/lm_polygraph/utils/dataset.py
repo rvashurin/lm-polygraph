@@ -217,10 +217,18 @@ class Dataset:
 
             for inst in dataset["translation"]:
                 if instruct:
-                    formatted_texts = [{
-                        "role": "system",
-                        "content": f'You are a translator from {source_lang} to {target_lang}. You output the word "Translation: " followed by the translation of the input text, notheing else.',
-                    }]
+                    try:
+                        formatted_texts = [{
+                            "role": "system",
+                            "content": f'You are a translator from {source_lang} to {target_lang}. You output the word "Translation: " followed by the translation of the input text, notheing else.',
+                        }]
+                        # this checks whether chat template has system role. Fails otherwise.
+                        tokenizer.apply_chat_template(
+                            formatted_texts, add_generation_prompt=True, tokenize=False
+                        )
+                    except:
+                        formatted_texts = []
+
                     if n_shot > 0:
                         for few_shot in few_shot_text:
                             formatted_prompt = prompt.format(
