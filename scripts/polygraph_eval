@@ -414,7 +414,11 @@ def get_generation_metrics(args):
             source_ignore_regex = getattr(args, "source_ignore_regex", None)
             translation_ignore_regex = getattr(args, "translation_ignore_regex", None)
             num_gpus = getattr(args, "comet_gpus", 0)
-            result += [Comet(source_ignore_regex = source_ignore_regex, translation_ignore_regex = translation_ignore_regex, gpus=num_gpus)]
+            comet_model = getattr(args, "comet_model", "Unbabel/wmt22-comet-da")
+            xcomet_model = getattr(args, "xcomet_model", "Unbabel/XCOMET-XXL")
+            result += [Comet(source_ignore_regex = source_ignore_regex, translation_ignore_regex = translation_ignore_regex, gpus=num_gpus, model=comet_model)]
+            # BEWARE - this will OOM your GPU if it's something less then 80Gb A100
+            result += [XComet(source_ignore_regex = source_ignore_regex, translation_ignore_regex = translation_ignore_regex, gpus=num_gpus, model=xcomet_model)]
     else:
         result = []
         for metric in generation_metrics:

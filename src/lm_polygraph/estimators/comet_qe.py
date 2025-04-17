@@ -2,18 +2,24 @@ import re
 import numpy as np
 
 from typing import List, Dict
-from .generation_metric import GenerationMetric
+from .estimator import Estimator
 
 from comet import download_model, load_from_checkpoint
 
 
-class Comet(GenerationMetric):
+class CometQE(Estimator):
     """
     Calculates COMET metric (https://aclanthology.org/2020.emnlp-main.213/)
     between model-generated texts and ground truth texts.
     """
 
-    def __init__(self, source_ignore_regex=None, translation_ignore_regex=None, gpus=0, model="Unbabel/wmt22-comet-da"):
+    def __init__(
+        self,
+        source_ignore_regex=None,
+        translation_ignore_regex=None,
+        gpus=0,
+        model="Unbabel/wmt23-cometkiwi-da-xxl",
+    ):
         super().__init__(["greedy_texts", "input_texts"], "sequence")
         model_path = download_model(model)
         self.scorer = load_from_checkpoint(model_path)
@@ -27,7 +33,7 @@ class Comet(GenerationMetric):
         self.gpus = gpus
 
     def __str__(self):
-        return f"Comet-{self.model_name}"
+        return f"CometQE-{self.model_name}"
 
     def _filter_source(self, text: str, ignore_regex: re.Pattern) -> str:
         if ignore_regex is not None:
@@ -46,7 +52,6 @@ class Comet(GenerationMetric):
     def __call__(
         self,
         stats: Dict[str, np.ndarray],
-        target_texts: List[str],
     ) -> np.ndarray:
         """
         Calculates COMET (https://aclanthology.org/2020.emnlp-main.213/) between
@@ -55,8 +60,6 @@ class Comet(GenerationMetric):
         Parameters:
             stats (Dict[str, np.ndarray]): input statistics, which for multiple samples includes:
                 * model-generated texts in 'greedy_texts'
-            target_texts (List[str]): ground-truth texts
-            input_texts (List[str]): input texts before translation
         Returns:
             np.ndarray: list of COMET Scores for each sample in input.
         """
@@ -70,8 +73,8 @@ class Comet(GenerationMetric):
         ]
 
         data = []
-        for original, translation, reference in zip(sources, translations, stats["target_texts"]):
-            data.append({'src': original, 'mt': translation, 'ref': reference})
+        for original, translation in zip(sources, translations):
+            data.append({'src': original, 'mt': translation})
 
         scores = self.scorer.predict(data, batch_size=1, gpus=self.gpus).scores
         return scores

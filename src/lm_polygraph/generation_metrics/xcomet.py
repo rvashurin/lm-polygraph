@@ -7,13 +7,19 @@ from .generation_metric import GenerationMetric
 from comet import download_model, load_from_checkpoint
 
 
-class Comet(GenerationMetric):
+class XComet(GenerationMetric):
     """
-    Calculates COMET metric (https://aclanthology.org/2020.emnlp-main.213/)
+    Calculates XCOMET metric (https://aclanthology.org/2020.emnlp-main.213/)
     between model-generated texts and ground truth texts.
     """
 
-    def __init__(self, source_ignore_regex=None, translation_ignore_regex=None, gpus=0, model="Unbabel/wmt22-comet-da"):
+    def __init__(
+        self,
+        source_ignore_regex=None,
+        translation_ignore_regex=None,
+        gpus=0,
+        model="Unbabel/XCOMET-XXL",
+    ):
         super().__init__(["greedy_texts", "input_texts"], "sequence")
         model_path = download_model(model)
         self.scorer = load_from_checkpoint(model_path)
@@ -27,7 +33,7 @@ class Comet(GenerationMetric):
         self.gpus = gpus
 
     def __str__(self):
-        return f"Comet-{self.model_name}"
+        return f"XComet-{self.model_name}"
 
     def _filter_source(self, text: str, ignore_regex: re.Pattern) -> str:
         if ignore_regex is not None:
@@ -74,4 +80,5 @@ class Comet(GenerationMetric):
             data.append({'src': original, 'mt': translation, 'ref': reference})
 
         scores = self.scorer.predict(data, batch_size=1, gpus=self.gpus).scores
-        return scores
+
+        return scores.system_score
