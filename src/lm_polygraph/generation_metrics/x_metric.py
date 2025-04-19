@@ -19,6 +19,7 @@ class XMetric(GenerationMetric):
                  source_ignore_regex=None, translation_ignore_regex=None):
         super().__init__(["greedy_texts", "input_texts"], "sequence")
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model_name_or_path = model_name_or_path
         self.model = MT5ForRegression.from_pretrained(model_name_or_path)
         self.model.to(self.device)
         self.model.eval()
@@ -48,7 +49,7 @@ class XMetric(GenerationMetric):
 
 
     def __str__(self):
-        return "metricx"
+        return f"metricx-{self.model_name_or_path.split('/')[-1]}"
 
     def _filter_source(self, text: str, ignore_regex: re.Pattern) -> str:
         if ignore_regex is not None:
