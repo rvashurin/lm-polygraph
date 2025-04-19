@@ -7,7 +7,7 @@ from transformers import AutoTokenizer
 from .x_metric_utils import MT5ForRegression
 import torch 
 import datasets 
-from transformers import TrainingArguments, Trainer
+from transformers import TrainingArguments, Trainer, DataCollatorWithPadding
 
 class XMetric(GenerationMetric):
     """
@@ -38,10 +38,12 @@ class XMetric(GenerationMetric):
             per_device_eval_batch_size=1,
             dataloader_pin_memory=False,
         )
+        data_collator = DataCollatorWithPadding(tokenizer=self.tokenizer)
 
         self.trainer = Trainer(
             model=self.model,
             args=self.training_args,
+            data_collator=data_collator,
         )
 
 
@@ -62,11 +64,11 @@ class XMetric(GenerationMetric):
         return ignore_regex.sub("", text).strip() if ignore_regex else text.strip()
 
     
-    def _prepare_inputs(self, translations: List[str], references: List[str]):
+    def _prepare_inputs(self, translations: List[str], references: List[str], sources: List[str]):
         """Prepares the input data for X-MERTIC scoring."""
         inputs = [
-            f"candidate: {hyp} reference: {ref}" 
-            for hyp, ref in zip(translations, references)
+            f"source: {source} candidate: {hyp} reference: {ref}" 
+            for hyp, ref, source in zip(translations, references, sources)
         ]
         tokenized = self.tokenizer(
             inputs, 
@@ -89,7 +91,7 @@ class XMetric(GenerationMetric):
 
         dataset = dataset.map(remove_eos)
         return dataset
-
+    
     def __call__(
         self,
         stats: Dict[str, np.ndarray],
@@ -115,8 +117,12 @@ class XMetric(GenerationMetric):
             self._filter_translation(tr, self.translation_ignore_regex)
             for tr in stats["greedy_texts"]
         ]
+        sources = [
+            self._filter_text(src, self.source_ignore_regex)
+            for src in stats["input_texts"]
+        ]
 
-        inputs = self._prepare_inputs(translations, references)
+        inputs = self._prepare_inputs(translations, references, sources)
         scores, _, _ = self.trainer.predict(test_dataset=inputs)
         for i, score in enumerate(scores):
             scores[i] = (25 - score) / 25
