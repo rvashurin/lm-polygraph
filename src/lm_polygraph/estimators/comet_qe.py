@@ -77,4 +77,4 @@ class CometQE(Estimator):
             data.append({'src': original, 'mt': translation})
 
         scores = self.scorer.predict(data, batch_size=1, gpus=self.gpus).scores
-        return scores
+        return -np.array(scores)
