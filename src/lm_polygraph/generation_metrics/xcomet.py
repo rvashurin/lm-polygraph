@@ -81,4 +81,4 @@ class XComet(GenerationMetric):
 
         scores = self.scorer.predict(data, batch_size=1, gpus=self.gpus).scores
 
-        return scores.system_score
+        return scores
