@@ -119,7 +119,7 @@ class XMetric(GenerationMetric):
             for tr in stats["greedy_texts"]
         ]
         sources = [
-            self._filter_text(src, self.source_ignore_regex)
+            self._filter_source(src, self.source_ignore_regex)
             for src in stats["input_texts"]
         ]
 
