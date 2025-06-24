@@ -151,6 +151,15 @@ def main(args):
                 "subsample_eval_dataset": args.subsample_eval_dataset,
                 "estimators": estimators
             }
+
+            
+            
+            # Create the output directory for the man file if it does not exist yet.
+            if not os.path.exists(save_path):
+                os.makedirs(save_path, exist_ok=True)
+                log.info(f"Manually created missing output directory: {save_path}")
+            
+            log.info(f"Creating {model_name}_{dataset_name}_{seed}_polygraph.man at {save_path}")
             man.save(save_path + f"/{model_name}_{dataset_name}_{seed}_polygraph.man", metainfo=metainfo)
             # man.save(save_path + f"/ue_manager_seed1")
 
