@@ -61,5 +61,8 @@ ignore_exceptions: false
 
 batch_size: 1
 
+stat_calculator:
+    batch_size: 1
+
 seed:
     - 1
