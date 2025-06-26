@@ -26,7 +26,7 @@ dataset: "UGRIP-LM-Polygraph/gsm8k-direct"
 text_column: question
 label_column: answer
 # Use max_new_tokens= to override
-max_new_tokens: 500
+max_new_tokens: 300
 
 process_output_fn:
   path: instruct/output_processing_scripts/ugrip.py
