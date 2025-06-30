@@ -32,8 +32,10 @@ from lm_polygraph.utils.builder_enviroment_stat_calculator import (
 from lm_polygraph.utils.factory_estimator import FactoryEstimator
 from lm_polygraph.utils.factory_stat_calculator import StatCalculatorContainer
 
-hydra_config = Path(os.environ.get("HYDRA_CONFIG", ""))
+import os 
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
+hydra_config = Path(os.environ.get("HYDRA_CONFIG", ""))
 
 def get_hydra_config_path():
     config = HydraConfig.get()
@@ -154,8 +156,6 @@ def main(args):
                 "subsample_eval_dataset": args.subsample_eval_dataset,
                 "estimators": estimators
             }
-
-            
             
             # Create the output directory for the man file if it does not exist yet.
             if not os.path.exists(save_path):
@@ -170,6 +170,8 @@ def main(args):
             wandb.log({str(k) : v for k, v in man.gen_metrics})
             wandb.log({str(k) : v for k, v in man.metrics.items()})
     
+    
+
     if hasattr(args, "report_to_wandb") and args.report_to_wandb:
         wandb.finish()
         

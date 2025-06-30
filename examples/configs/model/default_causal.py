@@ -9,7 +9,6 @@ def load_model(model_path: str, device_map: str):
 
     return model
 
-
 def load_tokenizer(model_path: str, add_bos_token: bool = True):
     tokenizer = AutoTokenizer.from_pretrained(
         model_path,
