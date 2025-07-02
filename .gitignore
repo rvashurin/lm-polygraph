@@ -1,3 +1,6 @@
+# HF token
+examples/.env
+
 .idea
 src/lm_polygraph/app/node_modules
 **/.DStore
@@ -170,6 +173,9 @@ cython_debug/
 
 # Slurm logs (UGRIP)
 slurm_logs/
+
+# AWS SageMaker logs (UGRIP)
+hyperpod/
 
 # Hydra multirun outputs (UGRIP)
 multirun/

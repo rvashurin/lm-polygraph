@@ -1,11 +1,16 @@
 hydra:
   run:
     dir: ${cache_path}/${task}/${model.path}/${dataset}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    # dir: ${cache_path}/${task}/${model}/${dataset}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+
+task: qa
 
 defaults:
   - model: ugrip_llama_instruct
   - estimators: ugrip_benchmark_estimators
   - stat_calculators: default_calculators
+  - generation_metrics: null
+
   - _self_
 
 # OPTIONS:
@@ -17,11 +22,11 @@ defaults:
 #  UGRIP-LM-POLYGRAPH/mmlu-reasoning
 dataset: "UGRIP-LM-Polygraph/gsm8k-direct"
 
-task: qa
+# task: qa
 text_column: question
 label_column: answer
 # Use max_new_tokens= to override
-max_new_tokens: 500
+max_new_tokens: 300
 
 process_output_fn:
   path: instruct/output_processing_scripts/ugrip.py
@@ -39,13 +44,13 @@ eval_split: test
 load_from_disk: false
 normalize: false # REQUIRED TO ALLOW process_output_fn
 trust_remote_code: false
-generation_params:
-  generate_until:
-    - "\n"
+# generation_params:
+#   generate_until:
+#     - "\n"
 
 # \/ How many samples per dataset
 # Change with subsample_eval_dataset=25
-subsample_eval_dataset: -1
+subsample_eval_dataset: 10
 
 # \/ What to ignore in model output
 # output_ignore_regex: "(?s).### Answer: "
@@ -55,6 +60,9 @@ subsample_eval_dataset: -1
 ignore_exceptions: false
 
 batch_size: 1
+
+stat_calculator:
+    batch_size: 1
 
 seed:
     - 1
