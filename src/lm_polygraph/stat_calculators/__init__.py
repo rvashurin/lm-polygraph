@@ -30,3 +30,4 @@ from .rouge_matrix import RougeLSemanticMatrixCalculator
 from .greedy_rouge_matrix import GreedyRougeLSemanticMatrixCalculator
 from .align_matrix import AlignMatrixCalculator
 from .greedy_align_matrix import GreedyAlignMatrixCalculator
+from .kernels import KernelsCalculator

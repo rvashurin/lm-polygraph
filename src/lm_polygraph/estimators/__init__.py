@@ -128,3 +128,5 @@ from .prob_cocoa import ProbCocoaMaxprob, ProbCocoaPPL, GreedyProbCocoaMaxprob, 
 from .supervised_sum_semantic_entropies import SupSumSemanticMaxprob, SupSumSemanticPPL, SupSumSemanticMTE, GreedySupSumSemanticMaxprob, GreedySupSumSemanticPPL, GreedySupSumSemanticMTE
 
 from .semantic_density import SemanticDensity, GreedySemanticDensity
+
+from .gpt_methods import GWD, CDI, GTV_L2, HES, SimilarityAwareRenyi
