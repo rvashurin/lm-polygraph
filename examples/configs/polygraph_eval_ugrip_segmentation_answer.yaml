@@ -6,7 +6,7 @@ task: qa
 
 defaults:
   - model: ugrip_llama_instruct_vllm
-  - estimators: ugrip_benchmark_estimators
+  - estimators: ugrip_segmentation_estimators
   - stat_calculators: default_calculators
   - generation_metrics: null
 
@@ -59,6 +59,7 @@ ignore_exceptions: false
 
 batch_size: 1
 
+answer_marker: "### Answer:"
 slicing_target: answer
 
 stat_calculator:
