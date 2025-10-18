@@ -59,7 +59,7 @@ ignore_exceptions: false
 
 batch_size: 1
 
-answer_marker: "### Answer:"
+# answer_marker: "### Answer:"
 slicing_target: answer
 
 stat_calculator:

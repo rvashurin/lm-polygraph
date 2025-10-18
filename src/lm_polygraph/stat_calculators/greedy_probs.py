@@ -58,6 +58,9 @@ class GreedyProbsCalculator(StatCalculator):
                 - "reasoning": Analyzes the text before the answer_marke`.
                 - None or any other string: Analyzes the full generation without slicing.
         """
+        # print("=====GreedyProbsCalculator Initialization=====")
+        # print(f"=====PARAMS: slicing_target: '{slicing_target}', answer_marker: '{answer_marker}'  =====")
+
         super().__init__()
         self.output_attentions = output_attentions
         self.output_hidden_states = output_hidden_states
@@ -68,6 +71,8 @@ class GreedyProbsCalculator(StatCalculator):
         else:
             self.slicing_target = slicing_target
         self.answer_marker = answer_marker if self.slicing_target else None
+        # print(f"Stored self.slicing_target: '{self.slicing_target}, self.answer_marker: '{self.answer_marker}'")
+        # print("==========")
 
 
     def _find_token_subsequence(self, main_list: List[int], len_sub: int, substring: str, tokenizer) -> int:
@@ -166,6 +171,12 @@ class GreedyProbsCalculator(StatCalculator):
             ).input_ids
 
         for i in range(len(texts)):
+            # print(f"\n=====Processing Sample {i}=====")
+            # print(f"Slicing with self.slicing_target: '{self.slicing_target}, self.answer_marker: '{self.answer_marker}'")
+            # if self.answer_marker:
+            #     marker_tokens = model.tokenizer(self.answer_marker, add_special_tokens=False).input_ids
+            #     print(f"Found marker_tokens: {marker_tokens}")
+
             if model.model_type == "CausalLM":
                 idx = batch["input_ids"].shape[1]
                 full_gen_seq = sequences[i, idx:].cpu()
@@ -180,6 +191,7 @@ class GreedyProbsCalculator(StatCalculator):
 
             if self.slicing_target and len(marker_tokens) > 0:
                 marker_pos = self._find_token_subsequence(full_gen_seq.tolist(), len(marker_tokens), self.answer_marker, model.tokenizer)
+            # print(f"Result of token search (marker_pos): {marker_pos}")
 
             if self.slicing_target == "answer":
                 if marker_pos != -1:
@@ -208,6 +220,8 @@ class GreedyProbsCalculator(StatCalculator):
 
             cut_sequences.append(final_seq_tokens)
             cut_texts.append(model.tokenizer.decode(final_seq_text_tokens))
+            # print(f"Final sliced text: '{cut_texts[-1]}'")
+            # print(f"---------------------------\n")
 
             cut_logits.append(logits[i, slice_start_idx : slice_start_idx + length, :].cpu().numpy())
 

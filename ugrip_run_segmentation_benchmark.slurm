@@ -11,6 +11,8 @@
 #SBATCH --time=24:00:00             # Specify the time needed for your experiment
 #SBATCH --qos=cscc-gpu-qos          # To enable the use of up to 8 GPUs
 
+# export VLLM_WORKER_MULTIPROC_METHOD="spawn"
+
 mkdir -p slurm_logs/$SLURM_JOB_ID
 
 MODEL="ugrip_llama_instruct_vllm"
@@ -23,7 +25,6 @@ TOTAL_START_TIME=$SECONDS
 # experiment info
 echo "Running on host: $(hostname)"
 echo "Job Name: $SLURM_JOB_NAME Job ID: $SLURM_JOB_ID"
-echo "Config file: $CONFIG_FILE_NAME"
 echo "Model: $MODEL, Dataset: $DATASET, Sample Size: $SAMPLE_SIZE"
 
 # reasoning only
