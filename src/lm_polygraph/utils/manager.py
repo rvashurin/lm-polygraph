@@ -556,8 +556,10 @@ class UEManager:
                         # TODO: Report how many nans!
                         # This is important to know for a user
                         ue, metric = _delete_nans(estimator_values, generation_metric)
-                        assert len(ue) == len(estimator_values)
-                        assert len(metric) == len(generation_metric)
+                        try:
+                            assert (len(ue) == len(estimator_values)) and (len(metric) == len(generation_metric)), f"Got different number of non-nan metrics for {e_name} and {gen_name}: {len(ue)} and {len(metric)}"
+                        except AssertionError as e:
+                            breakpoint()
 
                         if len(ue) == 0:
                             self.metrics[e_level, e_name, gen_name, str(ue_metric)] = np.nan

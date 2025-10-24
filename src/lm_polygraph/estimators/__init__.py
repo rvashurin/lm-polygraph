@@ -130,3 +130,5 @@ from .supervised_sum_semantic_entropies import SupSumSemanticMaxprob, SupSumSema
 from .semantic_density import SemanticDensity, GreedySemanticDensity
 
 from .gpt_methods import GWD, CDI, GTV_L2, HES, SimilarityAwareRenyi
+
+from .semantic_entropy_cocoa import SemanticEntropyCocoaMaxprob, SemanticEntropyCocoaPPL
