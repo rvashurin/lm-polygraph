@@ -87,7 +87,7 @@ class OpenAIChat:
                 ).chat.completions.create(
                     model=self.openai_model,
                     messages=messages,
-                    temperature=0,  # for deterministic outputs
+                    #temperature=0,  # for deterministic outputs
                     max_tokens=self.max_tokens,
                 )
             except Exception as e:
@@ -102,6 +102,6 @@ class OpenAIChat:
         ).chat.completions.create(
             model=self.openai_model,
             messages=messages,
-            temperature=0,  # for deterministic outputs
+            #temperature=0,  # for deterministic outputs
             max_tokens=self.max_tokens,
         )
