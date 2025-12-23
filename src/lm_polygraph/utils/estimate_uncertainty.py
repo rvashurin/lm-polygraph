@@ -32,10 +32,11 @@ class UncertaintyOutput:
     generation_tokens: List[int]
     model_path: str
     estimator: str
+    stats: dict
 
 
 def estimate_uncertainty(
-    model: Model, estimator, input_text: str
+    model: Model, estimator, input_text: str, output_stats = []
 ) -> UncertaintyOutput:
     """
     Estimated uncertainty of the model generation using the provided esitmator.
@@ -99,6 +100,7 @@ def estimate_uncertainty(
         ignore_exceptions=False,
         verbose=False,
         max_new_tokens=model.generation_parameters.max_new_tokens,
+        save_stats=output_stats,
     )
     man()
     ue = man.estimations[estimator.level, str(estimator)]
@@ -109,5 +111,5 @@ def estimate_uncertainty(
         # since we don't include it's uncertainty in the estimator's output
         tokens = tokens[0][:-1]
     return UncertaintyOutput(
-        ue[0], input_text, texts[0], tokens, model.model_path, str(estimator)
+        ue[0], input_text, texts[0], tokens, model.model_path, str(estimator), man.stats 
     )
