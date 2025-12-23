@@ -70,7 +70,8 @@ class SpecificationCalculator(StatCalculator):
             original_output = estimate_uncertainty(
                 model,
                 estimator,
-                input_text=original_question
+                input_text=original_question,
+                output_stats=["sample_texts"]
             )
             original_semantic_entropy = original_output.uncertainty
             original_samples = original_output.stats["sample_texts"]
@@ -80,7 +81,7 @@ class SpecificationCalculator(StatCalculator):
 
             clarifications = []
             sample_texts = []
-            for _ in range(3):
+            for _ in range(5):
                 openai_chat = OpenAIChat(openai_model="gpt-5.1")
                 prompt = CLARIFICATION_PROMPT.format(
                     original_question=original_question
@@ -94,7 +95,8 @@ class SpecificationCalculator(StatCalculator):
                 clarified_output = estimate_uncertainty(
                     model,
                     estimator,
-                    input_text=clarified_question
+                    input_text=clarified_question,
+                    output_stats=["sample_texts"]
                 )
                 clarified_entropy = clarified_output.uncertainty
                 clarified_entropies.append(clarified_entropy)
