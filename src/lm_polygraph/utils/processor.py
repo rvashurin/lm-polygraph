@@ -2,7 +2,7 @@ import numpy as np
 
 import logging
 from typing import List, Dict, Tuple
-from lm_polygraph.estimators.estimator import Estimator
+#from lm_polygraph.estimators.estimator import Estimator
 
 log = logging.getLogger(__name__)
 
@@ -83,7 +83,7 @@ class Logger(Processor):
     def on_eval(
         self,
         metrics: Dict[Tuple[str, str, str, str], float],
-        bad_estimators: Dict[Estimator, int],
+        bad_estimators,
     ):
         """
         Outputs statistics from `metrics` and failed estimators to stdout.

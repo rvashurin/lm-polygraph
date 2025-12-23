@@ -19,7 +19,7 @@ from lm_polygraph.ue_metrics.ue_metric import (
     get_random_scores,
     normalize_metric,
 )
-from lm_polygraph.estimators.estimator import Estimator
+#from lm_polygraph.estimators.estimator import Estimator
 from lm_polygraph.stat_calculators.stat_calculator import StatCalculator
 from lm_polygraph.utils.builder_enviroment_stat_calculator import (
     BuilderEnvironmentStatCalculator,
@@ -127,7 +127,7 @@ class UEManager:
         self,
         data: Dataset,
         model: Model,
-        estimators: List[Estimator],
+        estimators: List,
         builder_env_stat_calc: BuilderEnvironmentStatCalculator,
         available_stat_calculators: List[StatCalculatorContainer],
         generation_metrics: List[GenerationMetric],
@@ -161,7 +161,7 @@ class UEManager:
 
         self.model: Model = model
         self.data: Dataset = data
-        self.estimators: List[Estimator] = estimators
+        self.estimators: List = estimators
         self.generation_metrics: List[GenerationMetric] = generation_metrics
         self.ue_metrics: List[UEMetric] = ue_metrics
         _check_unique_names(generation_metrics)
@@ -171,7 +171,7 @@ class UEManager:
         self.gen_metrics: Dict[Tuple[str, str], List[float]] = defaultdict(list)
         self.estimations: Dict[Tuple[str, str], List[float]] = defaultdict(list)
         self.metrics: Dict[Tuple[str, str, str, str], float] = {}
-        self.total_bad_estimators: Dict[Estimator, float] = {}
+        self.total_bad_estimators: Dict = {}
         self.stats: Dict[str, List] = defaultdict(list)
 
         self.processors = processors

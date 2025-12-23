@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from lm_polygraph.utils.model import Model
 from lm_polygraph.model_adapters.whitebox_model import WhiteboxModel
 from lm_polygraph.model_adapters.visual_whitebox_model import VisualWhiteboxModel
-from lm_polygraph.estimators.estimator import Estimator
+#from lm_polygraph.estimators.estimator import Estimator
 from lm_polygraph.utils.manager import UEManager
 from lm_polygraph.utils.dataset import Dataset
 from lm_polygraph.utils.builder_enviroment_stat_calculator import (
@@ -36,7 +36,7 @@ class UncertaintyOutput:
 
 
 def estimate_uncertainty(
-    model: Model, estimator: Estimator, input_text: str
+    model: Model, estimator, input_text: str
 ) -> UncertaintyOutput:
     """
     Estimated uncertainty of the model generation using the provided esitmator.
