@@ -5,7 +5,6 @@ from lm_polygraph.utils.model import Model
 from lm_polygraph.model_adapters.whitebox_model import WhiteboxModel
 from lm_polygraph.model_adapters.visual_whitebox_model import VisualWhiteboxModel
 #from lm_polygraph.estimators.estimator import Estimator
-from lm_polygraph.utils.manager import UEManager
 from lm_polygraph.utils.dataset import Dataset
 from lm_polygraph.utils.builder_enviroment_stat_calculator import (
     BuilderEnvironmentStatCalculator,
@@ -76,6 +75,8 @@ def estimate_uncertainty(
     UncertaintyOutput(uncertainty=1.0022274826855433, input_text='When did Albert Einstein die?', generation_text='Albert Einstein died on April 18, 1955.', model_path='gpt-3.5-turbo')
     ```
     """
+    from lm_polygraph.utils.manager import UEManager
+
     # model_type = "Whitebox" if isinstance(model, WhiteboxModel) else "Blackbox"
     if isinstance(model, WhiteboxModel):
         model_type = "Whitebox"

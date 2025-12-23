@@ -104,6 +104,10 @@ def register_default_stat_calculators(
         "lm_polygraph.defaults.stat_calculator_builders.default_GreedyAlternativesNLICalculator",
         {"nli_model": nli_model_cfg},
     )
+    _register(
+        SpecificationCalculator,
+        "lm_polygraph.defaults.stat_calculator_builders.default_SpecificationCalculator",
+    )
 
     if model_type == "Blackbox":
         _register(BlackboxGreedyTextsCalculator)

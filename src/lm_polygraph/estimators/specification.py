@@ -35,7 +35,7 @@ class SpecificationUncertainty(Estimator):
     def __init__(
         self, verbose: bool = False, n_clarifications: int = 3
     ):
-        deps = ["input_texts"]
+        deps = ["clarified_entropies", "original_entropy"]
         super().__init__(deps, "sequence")
         self.verbose = verbose
         self.n_clarifications = n_clarifications
@@ -44,47 +44,11 @@ class SpecificationUncertainty(Estimator):
         return f"SpecificationUncertainty_n{self.n_clarifications}"
 
     def __call__(self, stats: Dict[str, np.ndarray]) -> np.ndarray:
-        estimator = SemanticEntropy(samples="unique")
-        model = stats["model"]
         spec_uncertainties = []
 
-        for request in stats["input_texts"]:
-            # TriviaQA
-            #instruction = [request.split("\n")[0]]
-            #question = request.split("\n")[-2:]
-            
-            # CoQA
-            question = request.split("\n")[-2:]
-            instruction = ['Answer the following question as briefly as possible.']
-
-            original_question = "\n".join(instruction + question)
-
-            original_semantic_entropy = estimate_uncertainty(
-                model,
-                estimator,
-                input_text=original_question
-            ).uncertainty
-
-            clarifications = []
-            for _ in range(self.n_clarifications):
-                openai_chat = OpenAIChat(openai_model="gpt-5.1")
-                prompt = CLARIFICATION_PROMPT.format(
-                    original_question=original_question
-                )
-                clarified_question = openai_chat.ask(prompt)
-                clarifications.append(clarified_question)
-
-            clarified_entropies = []
-            for clarified_question in clarifications:
-                clarified_entropy = estimate_uncertainty(
-                    model,
-                    estimator,
-                    input_text=clarified_question
-                ).uncertainty
-                clarified_entropies.append(clarified_entropy)
-
-            spec_uncertainties.append(
-                original_semantic_entropy - np.mean(clarified_entropies)
-            )
+        for i, original_entropy in enumerate(stats["original_entropy"]):
+            clarified_entropies = stats["clarified_entropies"][i]
+            spec_uncertainty = original_entropy - np.mean(clarified_entropies)
+            spec_uncertainties.append(spec_uncertainty)
 
         return np.array(spec_uncertainties)
