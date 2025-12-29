@@ -88,7 +88,7 @@ class SpecificationCalculator(StatCalculator):
 
             original_output = estimate_uncertainty(
                 model,
-                estimator,
+                estimators,
                 input_text=original_question,
                 output_stats=["sample_texts", "sample_log_probs"]
             )
@@ -122,7 +122,7 @@ class SpecificationCalculator(StatCalculator):
             for clarified_question in clarifications:
                 clarified_output = estimate_uncertainty(
                     model,
-                    estimator,
+                    estimators,
                     input_text=clarified_question,
                     output_stats=["sample_texts", "sample_log_probs"]
                 )
