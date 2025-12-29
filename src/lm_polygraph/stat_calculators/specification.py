@@ -32,7 +32,16 @@ class SpecificationCalculator(StatCalculator):
     @staticmethod
     def meta_info():
         # outputs, dependencies
-        return ["clarifications", "clarified_entropies", "original_entropy", "original_question", "original_samples", "clarified_samples"], ["input_texts"]
+        return [
+            "original_question",
+            "original_entropy",
+            "original_samples",
+            "original_sample_logprobs",
+            "clarifications",
+            "clarified_entropies",
+            "clarified_samples",
+            "clarified_sample_logprobs",
+        ], ["input_texts"]
 
     def __init__(self):
         super().__init__()
@@ -55,6 +64,9 @@ class SpecificationCalculator(StatCalculator):
         batch_original_samples = []
         batch_clarified_samples = []
 
+        batch_original_logprobs = []
+        batch_clarified_logprobs = []
+
         for request in dependencies["input_texts"]:
             # TriviaQA
             #instruction = [request.split("\n")[0]]
@@ -71,16 +83,17 @@ class SpecificationCalculator(StatCalculator):
                 model,
                 estimator,
                 input_text=original_question,
-                output_stats=["sample_texts"]
+                output_stats=["sample_texts", "sample_log_probs"]
             )
             original_semantic_entropy = original_output.uncertainty
             original_samples = original_output.stats["sample_texts"]
+            original_log_probs = original_output.stats["sample_log_probs"]
 
             batch_original_entropies.append(original_semantic_entropy)
             batch_original_samples.append(original_samples)
+            batch_original_logprobs.append(original_log_probs)
 
             clarifications = []
-            sample_texts = []
             for _ in range(5):
                 openai_chat = OpenAIChat(openai_model="gpt-5.1")
                 prompt = CLARIFICATION_PROMPT.format(
@@ -91,27 +104,35 @@ class SpecificationCalculator(StatCalculator):
             batch_clarifications.append(clarifications)
 
             clarified_entropies = []
+            clarified_samples = []
+            clarified_sample_log_probs = []
             for clarified_question in clarifications:
                 clarified_output = estimate_uncertainty(
                     model,
                     estimator,
                     input_text=clarified_question,
-                    output_stats=["sample_texts"]
+                    output_stats=["sample_texts", "sample_log_probs"]
                 )
                 clarified_entropy = clarified_output.uncertainty
                 clarified_entropies.append(clarified_entropy)
 
                 clarified_samples = clarified_output.stats["sample_texts"]
-                sample_texts.append(clarified_samples)
+                clarified_sample_log_probs = clarified_output.stats["sample_log_probs"]
+
+                clarified_samples.append(clarified_samples)
+                clarified_sample_log_probs.append(clarified_sample_log_probs)
 
             batch_clarified_entropies.append(clarified_entropies)
             batch_clarified_samples.append(sample_texts)
+            batch_clarified_logprobs.append(clarified_sample_log_probs)
 
         return {
+            "original_question": np.array(batch_original_questions),
+            "original_entropy": np.array(batch_original_entropies),
+            "original_samples": np.array(batch_original_samples),
+            "original_sample_logprobs": np.array(batch_original_logprobs),
             "clarifications": np.array(batch_clarifications),
             "clarified_entropies": np.array(batch_clarified_entropies),
-            "original_entropy": np.array(batch_original_entropies),
-            "original_question": np.array(batch_original_questions),
-            "original_samples": np.array(batch_original_samples),
             "clarified_samples": np.array(batch_clarified_samples),
+            "clarified_sample_logprobs": np.array(batch_clarified_logprobs),
         }

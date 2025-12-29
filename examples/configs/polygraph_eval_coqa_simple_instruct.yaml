@@ -26,7 +26,16 @@ few_shot_prompt: null
 trust_remote_code: false
 size: null
 
-save_stats: ["clarifications", "clarified_entropies", "original_entropy", "original_question", "original_samples", "clarified_samples"]
+save_stats: [
+  "original_question",
+  "original_entropy",
+  "original_samples",
+  "original_sample_logprobs",
+  "clarifications",
+  "clarified_entropies",
+  "clarified_samples",
+  "clarified_sample_logprobs"
+]
 
 max_new_tokens: 20
 load_from_disk: false
