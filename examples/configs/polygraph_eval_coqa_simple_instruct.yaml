@@ -28,11 +28,15 @@ size: null
 
 save_stats: [
   "original_question",
-  "original_entropy",
+  "original_semantic_entropy",
+  "original_mcse_entropy",
+  "original_mcnse_entropy",
   "original_samples",
   "original_sample_logprobs",
   "clarifications",
-  "clarified_entropies",
+  "clarified_semantic_entropy",
+  "clarified_mcse_entropy",
+  "clarified_mcnse_entropy",
   "clarified_samples",
   "clarified_sample_logprobs"
 ]

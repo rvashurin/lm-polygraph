@@ -36,7 +36,7 @@ class UncertaintyOutput:
 
 
 def estimate_uncertainty(
-    model: Model, estimator, input_text: str, output_stats = []
+    model: Model, estimators, input_text: str, output_stats = []
 ) -> UncertaintyOutput:
     """
     Estimated uncertainty of the model generation using the provided esitmator.
@@ -88,7 +88,7 @@ def estimate_uncertainty(
     man = UEManager(
         Dataset([input_text], [""], batch_size=1),
         model,
-        [estimator],
+        estimators,
         available_stat_calculators=register_default_stat_calculators(
             model_type,
             model=model,
@@ -103,7 +103,7 @@ def estimate_uncertainty(
         save_stats=output_stats,
     )
     man()
-    ue = man.estimations[estimator.level, str(estimator)]
+    ue = {str(estimator): man.estimations[estimator.level, str(estimator)][0] for estimator in estmators}
     texts = man.stats.get("greedy_texts", None)
     tokens = man.stats.get("greedy_tokens", None)
     if tokens is not None and len(tokens) > 0:
