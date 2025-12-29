@@ -127,12 +127,12 @@ class SpecificationCalculator(StatCalculator):
             batch_clarified_logprobs.append(clarified_sample_log_probs)
 
         return {
-            "original_question": np.array(batch_original_questions),
-            "original_entropy": np.array(batch_original_entropies),
-            "original_samples": np.array(batch_original_samples),
-            "original_sample_logprobs": np.array(batch_original_logprobs),
-            "clarifications": np.array(batch_clarifications),
-            "clarified_entropies": np.array(batch_clarified_entropies),
-            "clarified_samples": np.array(batch_clarified_samples),
-            "clarified_sample_logprobs": np.array(batch_clarified_logprobs),
+            "original_question": batch_original_questions,
+            "original_entropy": batch_original_entropies,
+            "original_samples": batch_original_samples,
+            "original_sample_logprobs": batch_original_logprobs,
+            "clarifications": batch_clarifications,
+            "clarified_entropies": batch_clarified_entropies,
+            "clarified_samples": batch_clarified_samples,
+            "clarified_sample_logprobs": batch_clarified_logprobs,
         }
