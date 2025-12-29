@@ -223,22 +223,22 @@ def get_generation_metrics(args):
     ignore_regex = getattr(args, "source_ignore_regex", None)
     if not generation_metrics:
         result = [
-            RougeMetric("rouge1"),
-            RougeMetric("rouge2"),
-            RougeMetric("rougeL"),
-            BLEUMetric(),
-            BertScoreMetric(),
-            SbertMetric(),
+            #RougeMetric("rouge1"),
+            #RougeMetric("rouge2"),
+            #RougeMetric("rougeL"),
+            #BLEUMetric(),
+            #BertScoreMetric(),
+            #SbertMetric(),
             AccuracyMetric(
                 target_ignore_regex=getattr(args, "target_ignore_regex", None),
                 output_ignore_regex=getattr(args, "output_ignore_regex", None),
                 normalize=getattr(args, "normalize", False),
             ),
         ]
-        if args.task == "ats":
-            result += [AlignScore(target_is_claims=False, source_ignore_regex=ignore_regex, source_as_target=True)]
-        else:
-            result += [AlignScore(target_is_claims=True)]
+        #if args.task == "ats":
+        #    result += [AlignScore(target_is_claims=False, source_ignore_regex=ignore_regex, source_as_target=True)]
+        #else:
+        #    result += [AlignScore(target_is_claims=True)]
         if getattr(args.model, "type", "Whitebox") != "Blackbox":
             if getattr(args, "use_claim_ue", False):
                 result += [
