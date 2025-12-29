@@ -123,7 +123,7 @@ class SpecificationCalculator(StatCalculator):
                 clarified_sample_log_probs.append(clarified_sample_log_probs)
 
             batch_clarified_entropies.append(clarified_entropies)
-            batch_clarified_samples.append(sample_texts)
+            batch_clarified_samples.append(clarified_samples)
             batch_clarified_logprobs.append(clarified_sample_log_probs)
 
         return {
