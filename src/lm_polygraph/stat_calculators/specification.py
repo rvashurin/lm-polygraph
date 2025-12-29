@@ -3,7 +3,7 @@ from typing import Dict, List
 from .stat_calculator import StatCalculator
 
 from lm_polygraph.utils.estimate_uncertainty import estimate_uncertainty
-from lm_polygraph.estimators import SemanticEntropy
+from lm_polygraph.estimators import SemanticEntropy, MonteCarloSequenceEntropy, MonteCarloNormalizedSequenceEntropy
 from lm_polygraph.utils.openai_chat import OpenAIChat
 
 CLARIFICATION_PROMPT="""
