@@ -103,7 +103,7 @@ def estimate_uncertainty(
         save_stats=output_stats,
     )
     man()
-    ue = {str(estimator): man.estimations[estimator.level, str(estimator)][0] for estimator in estmators}
+    ue = {str(estimator): man.estimations[estimator.level, str(estimator)][0] for estimator in estimators}
     texts = man.stats.get("greedy_texts", None)
     tokens = man.stats.get("greedy_tokens", None)
     if tokens is not None and len(tokens) > 0:
