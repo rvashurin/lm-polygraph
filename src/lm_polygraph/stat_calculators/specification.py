@@ -195,7 +195,7 @@ class SpecificationCalculator(StatCalculator):
             "original_samples": batch_original_samples,
             "original_sample_logprobs": batch_original_logprobs,
             "clarifications": batch_clarifications,
-            "clarified_semantic_entropies": batch_clarified_entropies,
+            "clarified_semantic_entropies": batch_semantic_clarified_entropies,
             "clarified_semantic_entropies_normalized": batch_clarified_semantic_entropies_normalized,
             "clarified_semantic_entropies_direct": batch_clarified_semantic_entropies_direct,
             "clarified_semantic_entropies_direct_normalized": batch_clarified_semantic_entropies_direct_normalized,
