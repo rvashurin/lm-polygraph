@@ -60,18 +60,18 @@ class SpecificationUncertaintySemanticDirect(Estimator):
         self.verbose = verbose
         self.n_clarifications = n_clarifications
     
-        def __str__(self):
-            return f"SpecificationUncertaintySemanticDirect_n{self.n_clarifications}"
-    
-        def __call__(self, stats: Dict[str, np.ndarray]) -> np.ndarray:
-            spec_uncertainties = []
-    
-            for i, original_entropy in enumerate(stats["original_semantic_entropy_direct"]):
-                clarified_entropies = stats["clarified_semantic_entropies_direct"][i]
-                spec_uncertainty = original_entropy - np.mean(clarified_entropies)
-                spec_uncertainties.append(spec_uncertainty)
-    
-            return np.array(spec_uncertainties)
+    def __str__(self):
+        return f"SpecificationUncertaintySemanticDirect_n{self.n_clarifications}"
+
+    def __call__(self, stats: Dict[str, np.ndarray]) -> np.ndarray:
+        spec_uncertainties = []
+
+        for i, original_entropy in enumerate(stats["original_semantic_entropy_direct"]):
+            clarified_entropies = stats["clarified_semantic_entropies_direct"][i]
+            spec_uncertainty = original_entropy - np.mean(clarified_entropies)
+            spec_uncertainties.append(spec_uncertainty)
+
+        return np.array(spec_uncertainties)
 
 
 class SpecificationUncertaintySemanticDirectNormalized(Estimator):
