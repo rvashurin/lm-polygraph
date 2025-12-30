@@ -34,11 +34,15 @@ class SpecificationCalculator(StatCalculator):
         # outputs, dependencies
         return [
             "original_question",
-            "original_entropy",
+            "original_semantic_entropy",
+            "original_mcse_entropy",
+            "original_mcnse_entropy",
             "original_samples",
             "original_sample_logprobs",
             "clarifications",
-            "clarified_entropies",
+            "clarified_semantic_entropies",
+            "clarified_mcse_entropies",
+            "clarified_mcnse_entropies",
             "clarified_samples",
             "clarified_sample_logprobs",
         ], ["input_texts"]
@@ -55,6 +59,9 @@ class SpecificationCalculator(StatCalculator):
     ) -> Dict[str, np.ndarray]:
         estimators = [
             SemanticEntropy(samples="unique"),
+            SemanticEntropy(samples="unique", normalize=True),
+            SemanticEntropy(samples="unique", estimator="direct"),
+            SemanticEntropy(samples="unique", estimator="direct", normalize=True),
             MonteCarloSequenceEntropy(),
             MonteCarloNormalizedSequenceEntropy(),
         ]
@@ -64,6 +71,9 @@ class SpecificationCalculator(StatCalculator):
         batch_original_samples = []
         batch_original_logprobs = []
         batch_original_semantic_entropies = []
+        batch_original_semantic_entropies_normalized = []
+        batch_original_semantic_entropies_direct = []
+        batch_original_semantic_entropies_direct_normalized = []
         batch_original_mcse_entropies = []
         batch_original_mcnse_entropies = []
 
@@ -71,6 +81,9 @@ class SpecificationCalculator(StatCalculator):
         batch_clarified_samples = []
         batch_clarified_logprobs = []
         batch_clarified_semantic_entropies = []
+        batch_clarified_semantic_entropies_normalized = []
+        batch_clarified_semantic_entropies_direct = []
+        batch_clarified_semantic_entropies_direct_normalized = []
         batch_clarified_mcse_entropies = []
         batch_clarified_mcnse_entropies = []
 
@@ -93,6 +106,9 @@ class SpecificationCalculator(StatCalculator):
                 output_stats=["sample_texts", "sample_log_probs"]
             )
             original_semantic_entropy = original_output.uncertainty['SemanticEntropy']
+            original_semantic_entropy_normalized = original_output.uncertainty['SemanticEntropyNormalized']
+            original_semantic_entropy_direct = original_output.uncertainty['SemanticEntropyDirect']
+            original_semantic_entropy_direct_normalized = original_output.uncertainty['SemanticEntropyDirectNormalized']
             original_mcse_entropy = original_output.uncertainty['MonteCarloSequenceEntropy']
             original_mcnse_entropy = original_output.uncertainty['MonteCarloNormalizedSequenceEntropy']
             original_samples = original_output.stats["sample_texts"]
@@ -117,6 +133,9 @@ class SpecificationCalculator(StatCalculator):
             clarified_samples = []
             clarified_sample_log_probs = []
             clarified_semantic_entropies = []
+            clarified_semantic_entropies_normalized = []
+            clarified_semantic_entropies_direct = []
+            clarified_semantic_entropies_direct_normalized = []
             clarified_mcse_entropies = []
             clarified_mcnse_entropies = []
             for clarified_question in clarifications:
@@ -128,6 +147,15 @@ class SpecificationCalculator(StatCalculator):
                 )
                 clarified_semantic_entropy = clarified_output.uncertainty['SemanticEntropy']
                 clarified_semantic_entropies.append(clarified_semantic_entropy)
+
+                clarified_semantic_entropy_normalized = clarified_output.uncertainty['SemanticEntropyNormalized']
+                clarified_semantic_entropies_normalized.append(clarified_semantic_entropy_normalized)
+
+                clarified_semantic_entropy_direct = clarified_output.uncertainty['SemanticEntropyDirect']
+                clarified_semantic_entropies_direct.append(clarified_semantic_entropy_direct)
+
+                clarified_semantic_entropy_direct_normalized = clarified_output.uncertainty['SemanticEntropyDirectNormalized']
+                clarified_semantic_entropies_direct_normalized.append(clarified_semantic_entropy_direct_normalized)
 
                 clarified_mcse_entropy = clarified_output.uncertainty['MonteCarloSequenceEntropy']
                 clarified_mcse_entropies.append(clarified_mcse_entropy)
@@ -144,18 +172,27 @@ class SpecificationCalculator(StatCalculator):
             batch_clarified_samples.append(clarified_samples)
             batch_clarified_logprobs.append(clarified_sample_log_probs)
             batch_clarified_semantic_entropies.append(clarified_semantic_entropies)
+            batch_clarified_semantic_entropies_normalized.append(clarified_semantic_entropies_normalized)
+            batch_clarified_semantic_entropies_direct.append(clarified_semantic_entropies_direct)
+            batch_clarified_semantic_entropies_direct_normalized.append(clarified_semantic_entropies_direct_normalized)
             batch_clarified_mcse_entropies.append(clarified_mcse_entropies)
             batch_clarified_mcnse_entropies.append(clarified_mcnse_entropies)
 
         return {
             "original_question": batch_original_questions,
             "original_semantic_entropy": batch_original_semantic_entropies,
+            "original_semantic_entropy_normalized": batch_original_semantic_entropies_normalized,
+            "original_semantic_entropy_direct": batch_original_semantic_entropies_direct,
+            "original_semantic_entropy_direct_normalized": batch_original_semantic_entropies_direct_normalized,
             "original_mcse_entropy": batch_original_mcse_entropies,
             "original_mcnse_entropy": batch_original_mcnse_entropies,
             "original_samples": batch_original_samples,
             "original_sample_logprobs": batch_original_logprobs,
             "clarifications": batch_clarifications,
-            "clarified_entropies": batch_clarified_entropies,
+            "clarified_semantic_entropies": batch_clarified_entropies,
+            "clarified_semantic_entropies_normalized": batch_clarified_semantic_entropies_normalized,
+            "clarified_semantic_entropies_direct": batch_clarified_semantic_entropies_direct,
+            "clarified_semantic_entropies_direct_normalized": batch_clarified_semantic_entropies_direct_normalized,
             "clarified_mcse_entropies": batch_clarified_mcse_entropies,
             "clarified_mcnse_entropies": batch_clarified_mcnse_entropies,
             "clarified_samples": batch_clarified_samples,

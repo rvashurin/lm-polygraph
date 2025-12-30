@@ -17,7 +17,7 @@ class SemanticEntropy(Estimator):
     """
 
     def __init__(
-        self, verbose: bool = False, class_probability_estimation: str = "sum", samples: str = "all"
+        self, verbose: bool = False, class_probability_estimation: str = "sum", samples: str = "all", normalize: bool = False, estimator: str = "sample"
     ):
         self.class_probability_estimation = class_probability_estimation
         if self.class_probability_estimation == "sum":
@@ -32,12 +32,23 @@ class SemanticEntropy(Estimator):
         super().__init__(deps, "sequence")
         self.verbose = verbose
         self.samples = samples
+        self.normalize = normalize
+        if estimator not in ["sample", "direct"]:
+            raise ValueError(
+                f"Unknown estimator: {estimator}. Use 'sample' or 'direct'."
+            )
+        self.estimator = estimator
 
     def __str__(self):
-        if self.class_probability_estimation == "sum":
-            return "SemanticEntropy"
-        elif self.class_probability_estimation == "frequency":
-            return "SemanticEntropyEmpirical"
+        base = "SemanticEntropy"
+        if self.samples == "unique":
+            base += "Unique"
+        if self.estimator == "direct":
+            base += "Direct"
+        if self.normalize:
+            base += "Normalized"
+        if self.class_probability_estimation == "frequency":
+            base += "Empirical"
 
     def __call__(self, stats: Dict[str, np.ndarray]) -> np.ndarray:
         """
@@ -53,7 +64,10 @@ class SemanticEntropy(Estimator):
                 Higher values indicate more uncertain samples.
         """
         if self.class_probability_estimation == "sum":
-            loglikelihoods_list = stats["sample_log_probs"]
+            if self.normalize:
+                loglikelihoods_list = [np.mean(ll) for batch_ll in stats["sample_log_likelihoods"] for ll in batch_ll]
+            else:
+                loglikelihoods_list = stats["sample_log_probs"]
             hyps_list = stats["sample_texts"]
         elif self.class_probability_estimation == "frequency":
             loglikelihoods_list = None
@@ -124,12 +138,20 @@ class SemanticEntropy(Estimator):
                     ]
                 )
             try:
-                semantic_logits[i] = -np.mean(
-                    [
-                        class_lp[sample_to_class[j]]
-                        for j in ind
-                    ]
-                )
+                if self.estimator == "direct":
+                    semantic_logits[i] = -np.sum(
+                        [
+                            np.exp(class_lp[sample_to_class[j]]) * class_lp[sample_to_class[j]]
+                            for j in ind
+                        ]
+                    )
+                else:
+                    semantic_logits[i] = -np.mean(
+                        [
+                            class_lp[sample_to_class[j]]
+                            for j in ind
+                        ]
+                    )
             except:
                 breakpoint()
         return np.array([semantic_logits[i] for i in range(len(hyps_list))])
