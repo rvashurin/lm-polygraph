@@ -41,8 +41,8 @@ class SemanticEntropy(Estimator):
 
     def __str__(self):
         base = "SemanticEntropy"
-        if self.samples == "unique":
-            base += "Unique"
+        #if self.samples == "unique":
+        #    base += "Unique"
         if self.estimator == "direct":
             base += "Direct"
         if self.normalize:
