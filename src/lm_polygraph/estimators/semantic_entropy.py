@@ -65,14 +65,21 @@ class SemanticEntropy(Estimator):
                 Higher values indicate more uncertain samples.
         """
         if self.class_probability_estimation == "sum":
+            hyps_list = stats["sample_texts"]
             if self.normalize:
                 loglikelihoods_list = [[np.mean(ll) for ll in batch_ll] for batch_ll in stats["sample_log_likelihoods"]]
+                # Normalized likelihoods of sequences do not sum to 1, and may give class probabilities > 1 resulting in negative entropy.
+                # We don't know the partition function here, so we approximate it by normalizing over the unique samples in the batch. This estimator is consistent but biased.
+                indices = [np.unique(hyps, return_index=True)[1] for hyps in hyps_list]
+                loglikelihoods_list = [
+                    ll - np.logaddexp.reduce(np.array(ll)[ind])
+                    for ll, ind in zip(loglikelihoods_list, indices)
+                ]
             else:
                 loglikelihoods_list = stats["sample_log_probs"]
-            hyps_list = stats["sample_texts"]
         elif self.class_probability_estimation == "frequency":
-            loglikelihoods_list = None
             hyps_list = stats["sample_texts"]
+            loglikelihoods_list = None
 
         index = []
         for i, hyps in enumerate(hyps_list):
