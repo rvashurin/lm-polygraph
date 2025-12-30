@@ -1,5 +1,10 @@
 - name: MaximumSequenceProbability
-- name: SpecificationUncertainty
+- name: SpecificationUncertaintySemantic
+- name: SpecificationUncertaintySemanticNormalized
+- name: SpecificationUncertaintySemanticDirect
+- name: SpecificationUncertaintySemanticDirectNormalized
+- name: SpecificationUncertaintyMCSE
+- name: SpecificationUncertaintyMCNSE
   #- name: Perplexity
   #- name: MeanTokenEntropy
   #- name: MonteCarloSequenceEntropy

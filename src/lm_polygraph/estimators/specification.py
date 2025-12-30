@@ -4,6 +4,7 @@ from typing import List, Dict, Optional
 
 from .estimator import Estimator
 
+
 class SpecificationUncertaintySemantic(Estimator):
     def __init__(
         self, verbose: bool = False, n_clarifications: int = 5

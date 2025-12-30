@@ -87,4 +87,4 @@ from .cocoa import CocoaMSP, CocoaPPL, CocoaMTE
 from .rauq import RAUQ
 from .csl import CSL
 from .semantic_density import SemanticDensity
-from .specification import SpecificationUncertainty
+from .specification import SpecificationUncertaintySemantic, SpecificationUncertaintySemanticNormalized, SpecificationUncertaintySemanticDirect, SpecificationUncertaintySemanticDirectNormalized, SpecificationUncertaintyMCSE, SpecificationUncertaintyMCNSE
