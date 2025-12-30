@@ -111,5 +111,5 @@ def estimate_uncertainty(
         # since we don't include it's uncertainty in the estimator's output
         tokens = tokens[0][:-1]
     return UncertaintyOutput(
-        ue[0], input_text, texts[0], tokens, model.model_path, str(estimator), man.stats 
+        ue, input_text, texts[0], tokens, model.model_path, "multiple", man.stats 
     )
