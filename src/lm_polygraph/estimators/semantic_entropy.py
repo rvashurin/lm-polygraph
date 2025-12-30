@@ -162,4 +162,14 @@ class SemanticEntropy(Estimator):
                     )
             except:
                 breakpoint()
-        return np.array([semantic_logits[i] for i in range(len(hyps_list))])
+
+        entropies = np.array([semantic_logits[i] for i in range(len(hyps_list))])
+        clipped_entropies = []
+
+        for ent in entropies:
+            if abs(ent) < 1e-8:
+                clipped_entropies.append(0.0)
+            else:
+                clipped_entropies.append(ent)
+
+        return np.array(clipped_entropies)
