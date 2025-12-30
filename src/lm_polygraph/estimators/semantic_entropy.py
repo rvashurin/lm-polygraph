@@ -66,7 +66,7 @@ class SemanticEntropy(Estimator):
         """
         if self.class_probability_estimation == "sum":
             if self.normalize:
-                loglikelihoods_list = [np.mean(ll) for batch_ll in stats["sample_log_likelihoods"] for ll in batch_ll]
+                loglikelihoods_list = [[np.mean(ll) for ll in batch_ll] for batch_ll in stats["sample_log_likelihoods"]
             else:
                 loglikelihoods_list = stats["sample_log_probs"]
             hyps_list = stats["sample_texts"]
