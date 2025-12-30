@@ -121,6 +121,9 @@ class SpecificationCalculator(StatCalculator):
             original_log_probs = original_output.stats["sample_log_probs"]
 
             batch_original_semantic_entropies.append(original_semantic_entropy)
+            batch_original_semantic_entropies_normalized.append(original_semantic_entropy_normalized)
+            batch_original_semantic_entropies_direct.append(original_semantic_entropy_direct)
+            batch_original_semantic_entropies_direct_normalized.append(original_semantic_entropy_direct_normalized)
             batch_original_mcse_entropies.append(original_mcse_entropy)
             batch_original_mcnse_entropies.append(original_mcnse_entropy)
             batch_original_samples.append(original_samples)
