@@ -49,6 +49,7 @@ class SemanticEntropy(Estimator):
             base += "Normalized"
         if self.class_probability_estimation == "frequency":
             base += "Empirical"
+        return base
 
     def __call__(self, stats: Dict[str, np.ndarray]) -> np.ndarray:
         """
