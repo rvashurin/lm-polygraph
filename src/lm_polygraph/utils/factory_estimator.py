@@ -58,12 +58,12 @@ def load_simple_estimators(name: str, config):
         RAUQ,
         CSL,
         SemanticDensity,
-        SpecificationUncertaintySemantic
-        SpecificationUncertaintySemanticNormalized
-        SpecificationUncertaintySemanticDirect
-        SpecificationUncertaintySemanticDirectNormalized
-        SpecificationUncertaintyMCSE
-        SpecificationUncertaintyMCNSE
+        SpecificationUncertaintySemantic,
+        SpecificationUncertaintySemanticNormalized,
+        SpecificationUncertaintySemanticDirect,
+        SpecificationUncertaintySemanticDirectNormalized,
+        SpecificationUncertaintyMCSE,
+        SpecificationUncertaintyMCNSE,
     ]
 
     try:
