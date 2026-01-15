@@ -117,8 +117,8 @@ class SpecificationCalculator(StatCalculator):
             original_semantic_entropy_direct_normalized = original_output.uncertainty['SemanticEntropyDirectNormalized']
             original_mcse_entropy = original_output.uncertainty['MonteCarloSequenceEntropy']
             original_mcnse_entropy = original_output.uncertainty['MonteCarloNormalizedSequenceEntropy']
-            original_samples = original_output.stats["sample_texts"]
-            original_log_probs = original_output.stats["sample_log_probs"]
+            original_samples = original_output.stats["sample_texts"][0]
+            original_log_probs = original_output.stats["sample_log_probs"][0]
 
             batch_original_semantic_entropies.append(original_semantic_entropy)
             batch_original_semantic_entropies_normalized.append(original_semantic_entropy_normalized)
@@ -172,11 +172,8 @@ class SpecificationCalculator(StatCalculator):
                 clarified_mcnse_entropy = clarified_output.uncertainty['MonteCarloNormalizedSequenceEntropy']
                 clarified_mcnse_entropies.append(clarified_mcnse_entropy)
 
-                clarified_samples = clarified_output.stats["sample_texts"]
-                clarified_sample_log_probs = clarified_output.stats["sample_log_probs"]
-
-                clarified_samples.append(clarified_samples)
-                clarified_sample_log_probs.append(clarified_sample_log_probs)
+                clarified_samples.append(clarified_output.stats["sample_texts"][0])
+                clarified_sample_log_probs.append(clarified_output.stats["sample_log_probs"][0])
 
             batch_clarified_samples.append(clarified_samples)
             batch_clarified_logprobs.append(clarified_sample_log_probs)
