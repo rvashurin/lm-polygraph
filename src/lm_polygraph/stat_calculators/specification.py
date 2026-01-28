@@ -19,7 +19,6 @@ from lm_polygraph.utils.builder_enviroment_stat_calculator import (
 )
 from lm_polygraph.utils.estimate_uncertainty import estimate_uncertainty
 from lm_polygraph.utils.factory_stat_calculator import FactoryStatCalculator
-from lm_polygraph.utils.manager import order_calculators
 from lm_polygraph.utils.openai_chat import OpenAIChat
 
 CLARIFICATION_PROMPT="""
@@ -79,7 +78,6 @@ class SpecificationCalculator(StatCalculator):
         super().__init__()
         self._avg_calculators = None
         self._avg_calc_model_type = None
-        self._avg_calc_order = None
         self._avg_required_stats = None
 
     @staticmethod
@@ -110,32 +108,28 @@ class SpecificationCalculator(StatCalculator):
             model_type, model=model
         )
 
-        stat_calculators_dict = {}
-        stat_dependencies_dict = {}
-        for sc in available_calculators:
-            for stat in sc.stats:
-                stat_calculators_dict[stat] = sc
-                stat_dependencies_dict[stat] = sc.dependencies
-
-        # Only compute missing stats not provided by the averaged distribution.
-        base_stats = {
-            "sample_texts",
-            "sample_log_probs",
-            "sample_log_likelihoods",
-            "sample_tokens",
+        calc_by_name = {sc.name: sc for sc in available_calculators}
+        need_semantic_classes = "semantic_classes_entail" in required_stats_set
+        semantic_matrix_stats = {
+            "semantic_matrix_entail",
+            "semantic_matrix_contra",
+            "semantic_matrix_classes",
+            "semantic_matrix_entail_logits",
+            "semantic_matrix_contra_logits",
+            "entailment_id",
         }
-        missing_stats = [s for s in required_stats if s not in base_stats]
-        pruned_dependencies = {
-            stat: [dep for dep in deps if dep not in base_stats]
-            for stat, deps in stat_dependencies_dict.items()
-        }
-        ordered_stats, _ = order_calculators(
-            missing_stats, stat_calculators_dict, pruned_dependencies
+        need_semantic_matrix = need_semantic_classes or bool(
+            semantic_matrix_stats.intersection(required_stats_set)
         )
 
+        ordered_calculators = []
+        if need_semantic_matrix:
+            ordered_calculators.append(calc_by_name["SemanticMatrixCalculator"])
+        if need_semantic_classes:
+            ordered_calculators.append(calc_by_name["SemanticClassesCalculator"])
+
         factory = FactoryStatCalculator(BuilderEnvironmentStatCalculator(model))
-        self._avg_calculators = factory([stat_calculators_dict[s] for s in ordered_stats])
-        self._avg_calc_order = ordered_stats
+        self._avg_calculators = factory(ordered_calculators)
         self._avg_calc_model_type = model_type
         self._avg_required_stats = required_stats_set
 
