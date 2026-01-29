@@ -13,7 +13,7 @@ save_path: '${hydra:run.dir}'
 instruct: true
 task: qa
 
-dataset: ['LM-Polygraph/ambig_qa', 'simple_instruct_ambiguous']
+dataset: ['rvashurin/ambig_qa', 'simple_instruct_ambiguous']
 text_column: input
 label_column: output
 train_split: train
