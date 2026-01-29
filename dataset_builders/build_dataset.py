@@ -2,6 +2,7 @@ import datasets
 
 from builders.base import CONFIG as base_config
 from builders.babi_qa import CONFIG as babi_qa_config
+from builders.ambig_qa import CONFIG as ambig_qa_config
 from builders.coqa import CONFIG as coqa_config
 from builders.mmlu import CONFIG as mmlu_config
 from builders.person import CONFIG as person_config
@@ -16,6 +17,7 @@ from builders.gsm8k import CONFIG as gsm8k_config
 DATASET_CONFIG = (
     base_config
     | babi_qa_config
+    | ambig_qa_config
     | coqa_config
     | mmlu_config
     | person_config
@@ -39,6 +41,9 @@ def build_dataset(dataset_name):
         dataset = datasets.load_dataset(
             config["name"], trust_remote_code=True, num_proc=4
         )
+
+    if "build_func" in config:
+        return config["build_func"](dataset=dataset)
 
     def prepare_dataset(split):
         x, y = config["prepare_func"](dataset=dataset[config[f"{split}_split"]])
