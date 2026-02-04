@@ -126,13 +126,10 @@ class SemanticEntropy(Estimator):
 
             if self.class_probability_estimation == "sum":
                 ll = np.array(loglikelihoods_list[i])
-                try:
-                    class_likelihoods = [
-                        np.array(ll[np.array(class_idx)])
-                        for class_idx in class_to_sample
-                    ]
-                except:
-                    breakpoint()
+                class_likelihoods = [
+                    np.array(ll[class_idx])
+                    for class_idx in class_to_sample
+                ]
                 class_lp = [
                     np.logaddexp.reduce(likelihoods)
                     for likelihoods in class_likelihoods
@@ -145,23 +142,20 @@ class SemanticEntropy(Estimator):
                         for class_idx in class_to_sample
                     ]
                 )
-            try:
-                if self.estimator == "direct":
-                    semantic_logits[i] = -np.sum(
-                        [
-                            np.exp(class_lp[sample_to_class[j]]) * class_lp[sample_to_class[j]]
-                            for j in ind
-                        ]
-                    )
-                else:
-                    semantic_logits[i] = -np.mean(
-                        [
-                            class_lp[sample_to_class[j]]
-                            for j in ind
-                        ]
-                    )
-            except:
-                breakpoint()
+            if self.estimator == "direct":
+                semantic_logits[i] = -np.sum(
+                    [
+                        np.exp(class_lp[sample_to_class[j]]) * class_lp[sample_to_class[j]]
+                        for j in ind
+                    ]
+                )
+            else:
+                semantic_logits[i] = -np.mean(
+                    [
+                        class_lp[sample_to_class[j]]
+                        for j in ind
+                    ]
+                )
 
         entropies = np.array([semantic_logits[i] for i in range(len(hyps_list))])
         clipped_entropies = []
