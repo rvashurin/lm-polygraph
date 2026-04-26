@@ -64,3 +64,4 @@ from .extract_claims import ClaimsExtractor
 from .infer_causal_lm_calculator import InferCausalLMCalculator
 from .semantic_classes import SemanticClassesCalculator
 from .specification import SpecificationCalculator
+from .dialogue_specification import DialogueSpecificationCalculator

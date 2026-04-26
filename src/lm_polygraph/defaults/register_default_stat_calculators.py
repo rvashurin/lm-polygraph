@@ -111,6 +111,12 @@ def register_default_stat_calculators(
         "lm_polygraph.defaults.stat_calculator_builders.default_SpecificationCalculator",
     )
 
+    from lm_polygraph.stat_calculators.dialogue_specification import DialogueSpecificationCalculator
+    _register(
+        DialogueSpecificationCalculator,
+        "lm_polygraph.defaults.stat_calculator_builders.default_DialogueSpecificationCalculator",
+    )
+
     if model_type == "Blackbox":
         _register(BlackboxGreedyTextsCalculator)
         _register(BlackboxSamplingGenerationCalculator)
