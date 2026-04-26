@@ -64,6 +64,12 @@ def load_simple_estimators(name: str, config):
         SpecificationUncertaintySemanticDirectNormalized,
         SpecificationUncertaintyMCSE,
         SpecificationUncertaintyMCNSE,
+        DialogueSpecificationUncertaintySemantic,
+        DialogueSpecificationUncertaintySemanticNormalized,
+        DialogueSpecificationUncertaintySemanticDirect,
+        DialogueSpecificationUncertaintySemanticDirectNormalized,
+        DialogueSpecificationUncertaintyMCSE,
+        DialogueSpecificationUncertaintyMCNSE,
     ]
 
     try:
