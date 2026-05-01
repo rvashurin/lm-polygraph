@@ -1,0 +1,56 @@
+hydra:
+  run:
+    dir: ${cache_path}/${task}/${model}/${dataset_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+
+defaults:
+  - model: bloomz-560m
+  - estimators: default_estimators_source
+  - stat_calculators: default_calculators
+  - base_processing_triviaqa
+  - _self_
+
+cache_path: ./workdir/output
+save_path: '${hydra:run.dir}'
+instruct: true
+task: qa
+
+dataset_name: source_aware
+dataset: /home/maiya.goloburda/why_dont_know/source_aware.csv
+prompt: "Answer the following question in ONE sentence. Answer as plain text on a single line. No line breaks or markdown. Provide only the answer — no introductions, explanations, or extra text. No words like 'here is', 'breakdown', 'let’s', 'fascinating'. Keep the answer short. Question: {text}\n"
+text_column: s1_question
+label_column: s1_answer
+train_split: train
+eval_split: test
+max_new_tokens: 50
+load_from_disk: false
+multiref: false
+trust_remote_code: false
+size: 10000
+generation_params:
+  stop_strings:
+    - "\n"
+save_stats:
+  - greedy_tokens
+  - greedy_log_likelihoods
+  - greedy_sentence_similarity
+  - greedy_log_probs
+  - sample_log_probs
+  - sample_tokens
+  - sample_texts
+  - semantic_matrix_entail
+  - semantic_matrix_contra
+  - embeddings_decoder
+  - attention_all
+  - greedy_semantic_matrix_entail_forward
+  - greedy_semantic_matrix_entail
+
+subsample_eval_dataset: -1
+
+generation_metrics: null
+
+ignore_exceptions: false
+
+batch_size: 2
+
+seed:
+    - 1
