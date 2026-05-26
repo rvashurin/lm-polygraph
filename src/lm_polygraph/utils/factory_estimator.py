@@ -29,6 +29,7 @@ def load_simple_estimators(name: str, config):
         SAR,
         TokenSAR,
         SentenceSAR,
+        SAUR,
         LUQ,
         KernelLanguageEntropy,
         EigenScore,

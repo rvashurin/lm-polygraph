@@ -76,6 +76,7 @@ from .ensemble_sequence_measures import (
 from .token_sar import TokenSAR
 from .sentence_sar import SentenceSAR
 from .sar import SAR
+from .saur import SAUR
 from .renyi_neg import RenyiNeg
 from .fisher_rao import FisherRao
 from .verbalized_1s import Verbalized1S

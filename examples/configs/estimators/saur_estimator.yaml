@@ -1,0 +1,5 @@
+- name: SAUR
+  cfg:
+    tokenizer_path: "google/gemma-3-12b-it" 
+    k: 150
+    min_len: 10
