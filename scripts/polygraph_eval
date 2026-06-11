@@ -174,7 +174,10 @@ def get_stat_calculator_names(config, model):
     model_type = "Whitebox" if getattr(config.model, "type", "Whitebox") != "Blackbox" else "Blackbox"
     language = getattr(config, "language", "en")
     output_attentions = getattr(config, "output_attentions", True) and (getattr(config.model, "type", "Whitebox") != "vLLMCausalLM")
-    output_hidden_states = False if getattr(config.model, "type", "Whitebox") == "vLLMCausalLM" else True
+    output_hidden_states = (
+        getattr(config, "output_hidden_states", True)
+        and getattr(config.model, "type", "Whitebox") != "vLLMCausalLM"
+    )
     hf_cache = getattr(config, "hf_cache", None)
     deberta_batch_size = getattr(config, "deberta_batch_size", 10)
 

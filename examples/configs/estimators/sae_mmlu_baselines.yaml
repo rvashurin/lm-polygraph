@@ -1,0 +1,5 @@
+- name: MaximumSequenceProbability
+- name: Perplexity
+- name: MeanTokenEntropy
+- name: SAELatentEntropy
+- name: SAEEffectiveNumFeatures

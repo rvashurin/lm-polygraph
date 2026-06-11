@@ -1,0 +1,41 @@
+defaults:
+  - polygraph_eval_mmlu_simple_instruct
+  - override model: llama-3.1-8b-instruct-whitebox
+  - override estimators: sae_mmlu_baselines
+  - _self_
+
+hydra:
+  run:
+    dir: ${cache_path}/sae_mmlu/${model.path}/${dataset}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+
+cache_path: ./workdir/output
+hf_cache: null
+save_path: '${hydra:run.dir}'
+
+output_attentions: false
+output_hidden_states: false
+
+generation_metrics:
+  - name: AccuracyMetric
+
+stat_calculators:
+  - auto
+  - name: SAELatentActivationsCalculator
+    builder: lm_polygraph.defaults.stat_calculator_builders.default_SAELatentActivationsCalculator
+    cfg:
+      repo_id: andyrdt/saes-llama-3.1-8b-instruct
+      sae_path: resid_post_layer_19/trainer_1/ae.pt
+      layer: 19
+      module_path: model.layers.19
+      hf_cache: ${hf_cache}
+      device: auto
+      dtype: bfloat16
+      use_threshold: true
+      fallback_to_top_k: true
+      k: 64
+      token_positions: prediction
+      aggregation: mean
+    stats:
+      - sae_latent_activations
+    dependencies:
+      - greedy_tokens
