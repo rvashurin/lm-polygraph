@@ -36,7 +36,13 @@ class AccuracyMetric(GenerationMetric):
         return "Accuracy"
 
     def _score_single(self, output: str, target: str) -> int:
-        if output.strip() == target.strip():
+        output = output.strip()
+        target = target.strip()
+        if output == target:
+            return 1
+
+        stop_chars = string.whitespace + string.punctuation
+        if output.rstrip(stop_chars) == target.rstrip(stop_chars):
             return 1
         return 0
 
