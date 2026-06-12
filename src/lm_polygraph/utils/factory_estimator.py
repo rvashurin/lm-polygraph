@@ -61,6 +61,8 @@ def load_simple_estimators(name: str, config):
         SemanticDensity,
         SAELatentEntropy,
         SAEEffectiveNumFeatures,
+        SAETokenLatentEntropy,
+        SAETokenEffectiveNumFeatures,
     ]
 
     try:

@@ -88,4 +88,9 @@ from .cocoa import CocoaMSP, CocoaPPL, CocoaMTE
 from .rauq import RAUQ
 from .csl import CSL
 from .semantic_density import SemanticDensity
-from .sae import SAELatentEntropy, SAEEffectiveNumFeatures
+from .sae import (
+    SAELatentEntropy,
+    SAEEffectiveNumFeatures,
+    SAETokenLatentEntropy,
+    SAETokenEffectiveNumFeatures,
+)

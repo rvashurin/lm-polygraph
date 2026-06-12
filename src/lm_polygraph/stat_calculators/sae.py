@@ -172,7 +172,10 @@ class SAELatentActivationsCalculator(StatCalculator):
 
     @staticmethod
     def meta_info() -> Tuple[List[str], List[str]]:
-        return ["sae_latent_activations"], ["greedy_tokens"]
+        return [
+            "sae_latent_activations",
+            "sae_token_latent_activations",
+        ], ["greedy_tokens"]
 
     def __init__(
         self,
@@ -301,6 +304,17 @@ class SAELatentActivationsCalculator(StatCalculator):
             return latents.max(dim=0).values
         raise ValueError(f"Unsupported SAE aggregation: {self.aggregation}")
 
+    def _to_sparse_token_latents(self, latents: torch.Tensor) -> Dict[str, np.ndarray]:
+        latents = latents.float().cpu()
+        token_ids, feature_ids = torch.nonzero(latents > 0, as_tuple=True)
+        values = latents[token_ids, feature_ids]
+        return {
+            "token_indices": token_ids.numpy().astype(np.int32),
+            "feature_indices": feature_ids.numpy().astype(np.int32),
+            "values": values.numpy().astype(np.float32),
+            "shape": np.array(latents.shape, dtype=np.int64),
+        }
+
     def __call__(
         self,
         dependencies: Dict[str, np.array],
@@ -341,9 +355,14 @@ class SAELatentActivationsCalculator(StatCalculator):
 
         hidden_states = captured_hidden_states[0]
         sample_latents = []
+        sample_token_latents = []
         for sample_idx, positions in enumerate(selected_positions):
             activations = hidden_states[sample_idx, positions, :]
             latents = self.encoder.encode(activations)
             sample_latents.append(self._aggregate(latents).float().cpu().numpy())
+            sample_token_latents.append(self._to_sparse_token_latents(latents))
 
-        return {"sae_latent_activations": np.stack(sample_latents, axis=0)}
+        return {
+            "sae_latent_activations": np.stack(sample_latents, axis=0),
+            "sae_token_latent_activations": sample_token_latents,
+        }

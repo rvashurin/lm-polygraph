@@ -3,3 +3,5 @@
 - name: MeanTokenEntropy
 - name: SAELatentEntropy
 - name: SAEEffectiveNumFeatures
+- name: SAETokenLatentEntropy
+- name: SAETokenEffectiveNumFeatures

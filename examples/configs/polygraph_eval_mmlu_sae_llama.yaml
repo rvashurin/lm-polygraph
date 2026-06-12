@@ -18,6 +18,9 @@ output_hidden_states: false
 generation_metrics:
   - name: AccuracyMetric
 
+save_stats:
+  - sae_token_latent_activations
+
 stat_calculators:
   - auto
   - name: SAELatentActivationsCalculator
@@ -37,5 +40,6 @@ stat_calculators:
       aggregation: mean
     stats:
       - sae_latent_activations
+      - sae_token_latent_activations
     dependencies:
       - greedy_tokens
