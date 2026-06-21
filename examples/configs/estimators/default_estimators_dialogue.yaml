@@ -1,0 +1,7 @@
+- name: MaximumSequenceProbability
+- name: DialogueSpecificationUncertaintySemantic
+- name: DialogueSpecificationUncertaintySemanticNormalized
+- name: DialogueSpecificationUncertaintySemanticDirect
+- name: DialogueSpecificationUncertaintySemanticDirectNormalized
+- name: DialogueSpecificationUncertaintyMCSE
+- name: DialogueSpecificationUncertaintyMCNSE

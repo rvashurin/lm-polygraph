@@ -1,0 +1,59 @@
+hydra:
+  run:
+    dir: ${cache_path}/${task}/${model}/${dataset_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+
+defaults:
+  - model: bloomz-560m
+  - estimators: default_estimators_dialogue
+  - stat_calculators: default_calculators
+  - base_processing_triviaqa
+  - _self_
+
+cache_path: ./workdir/output
+save_path: '${hydra:run.dir}'
+instruct: true
+task: qa
+
+dataset_name: source_aware
+dataset: /home/maiya.goloburda/lm-polygraph/source_aware.csv
+prompt: "Answer the following question in ONE sentence. Answer as plain text on a single line. No line breaks or markdown. Provide only the answer — no introductions, explanations, or extra text. No words like 'here is', 'breakdown', 'let's', 'fascinating'. Keep the answer short. Question: {text}\n"
+text_column: s3_question
+label_column: s3_answer
+train_split: train
+eval_split: test
+
+multiref: false
+trust_remote_code: false
+size: 10000
+save_stats: [
+  "dialogue_original_question",
+  "dialogue_clarifying_question",
+  "dialogue_clarifying_answers",
+  "dialogue_samples",
+  "dialogue_sample_logprobs",
+  "dialogue_semantic_entropies",
+  "dialogue_semantic_entropies_normalized",
+  "dialogue_semantic_entropies_direct",
+  "dialogue_semantic_entropies_direct_normalized",
+  "dialogue_mcse_entropies",
+  "dialogue_mcnse_entropies",
+  "avg_dialogue_semantic_entropy",
+  "avg_dialogue_semantic_entropy_normalized",
+  "avg_dialogue_semantic_entropy_direct",
+  "avg_dialogue_semantic_entropy_direct_normalized",
+  "avg_dialogue_mcse_entropy",
+  "avg_dialogue_mcnse_entropy"
+]
+
+max_new_tokens: 20
+load_from_disk: false
+generation_params:
+  stop_strings:
+    - "\n"
+subsample_eval_dataset: -1
+batch_size: 1
+
+generation_metrics: null
+ignore_exceptions: false
+seed:
+    - 1
