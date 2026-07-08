@@ -90,3 +90,10 @@ from .cocoa import CocoaMSP, CocoaPPL, CocoaMTE
 from .rauq import RAUQ
 from .csl import CSL
 from .semantic_density import SemanticDensity
+from .confidence_leap import (
+    ConfidenceLeapFinalConfidence,
+    ConfidenceLeapMeanConfidence,
+    ConfidenceLeapMaxConfidence,
+    ConfidenceLeapMaxJump,
+    ConfidenceLeapNumChanges,
+)

@@ -96,6 +96,7 @@ def register_default_stat_calculators(
                 "output_hidden_states": output_hidden_states,
             },
         )
+        _register(ConfidenceLeapCalculator)
         _register(EntropyCalculator)
         _register(GreedyLMProbsCalculator)
         _register(PromptCalculator)

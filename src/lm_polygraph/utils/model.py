@@ -569,6 +569,86 @@ class WhiteboxModel(Model):
 
         return texts
 
+    def format_assistant_continuation(
+        self,
+        input_text: Union[str, List[Dict[str, str]]],
+        assistant_prefix: str,
+    ) -> str:
+        """
+        Formats a prompt plus an incomplete assistant reply for continuation
+        scoring. This is useful for calculators that need the probability of the
+        next assistant token after a known partial answer.
+        """
+        if not self.instruct:
+            if isinstance(input_text, str):
+                return input_text + assistant_prefix
+            if getattr(self.tokenizer, "chat_template", None) is not None:
+                messages = [dict(message) for message in input_text]
+                if messages and messages[-1].get("role") == "assistant":
+                    messages[-1]["content"] = (
+                        messages[-1].get("content", "") + assistant_prefix
+                    )
+                else:
+                    messages.append({"role": "assistant", "content": assistant_prefix})
+                return self._format_chat_continuation(messages)
+            raise ValueError(
+                "Structured chat input requires an instruct model or a tokenizer chat template."
+            )
+
+        messages = (
+            [{"role": "user", "content": input_text}]
+            if isinstance(input_text, str)
+            else [dict(message) for message in input_text]
+        )
+        if messages and messages[-1].get("role") == "assistant":
+            messages[-1]["content"] = messages[-1].get("content", "") + assistant_prefix
+        else:
+            messages.append({"role": "assistant", "content": assistant_prefix})
+        return self._format_chat_continuation(messages)
+
+    def _format_chat_continuation(self, messages: List[Dict[str, str]]) -> str:
+        try:
+            return self.tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                continue_final_message=True,
+            )
+        except TypeError:
+            if not messages or messages[-1].get("role") != "assistant":
+                raise
+            assistant_content = messages[-1].get("content", "")
+            prompt_messages = messages[:-1]
+            header = self.tokenizer.apply_chat_template(
+                prompt_messages,
+                add_generation_prompt=True,
+                tokenize=False,
+            )
+            return header + assistant_content
+
+    def tokenize_assistant_continuations(
+        self,
+        input_texts: List[Union[str, List[Dict[str, str]]]],
+        assistant_prefixes: List[str],
+    ) -> Dict[str, torch.Tensor]:
+        """
+        Tokenizes prompts formatted with incomplete assistant replies. The final
+        assistant message is left open so the next-token logits score a
+        continuation of that reply.
+        """
+        if len(input_texts) != len(assistant_prefixes):
+            raise ValueError("input_texts and assistant_prefixes must have the same length")
+
+        formatted_texts = [
+            self.format_assistant_continuation(input_text, assistant_prefix)
+            for input_text, assistant_prefix in zip(input_texts, assistant_prefixes)
+        ]
+        return self.tokenizer(
+            formatted_texts,
+            padding=True,
+            return_tensors="pt",
+            add_special_tokens=not self.instruct,
+        )
+
     def __call__(self, **args):
         """
         Calls the model on the input batch. Returns the resulted scores.
