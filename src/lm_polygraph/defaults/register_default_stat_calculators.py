@@ -17,6 +17,7 @@ def register_default_stat_calculators(
     output_hidden_states: bool = True,
     batch_size: int = 10,
     answer_marker: str = "### Answer:",
+    reasoning_marker: str = "### Reasoning:",
     slicing_target: str = None,
 ) -> List[StatCalculatorContainer]:
     """
@@ -92,6 +93,7 @@ def register_default_stat_calculators(
                 "output_attentions": output_attentions,
                 "output_hidden_states": output_hidden_states,
                 "answer_marker": answer_marker,
+                "reasoning_marker": reasoning_marker,
                 "slicing_target": slicing_target,
             },
         )
