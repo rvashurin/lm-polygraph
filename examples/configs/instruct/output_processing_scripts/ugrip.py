@@ -28,13 +28,18 @@ MCQ_LETTER_REGEX = re.compile(
     r"^\s*[\(\[]?\s*([a-dA-D])\s*[\)\]\.\:\,]?(?:\s|$)"
 )
 # Fallback: search anywhere for 'the answer is X' / 'answer: X' / '(X)'.
+# The captured letter must be standalone: '(?![A-Za-z])' stops 'the answer is
+# Because...' from matching 'b' out of the middle of a word.
 ANSWER_PHRASE_SEARCH_REGEX = re.compile(
-    r"(?i)(?:the\s+answer\s+is|answer\s*[:\-])\s*[\(\[]?\s*([a-dA-D])\b"
+    r"(?i)(?:the\s+answer\s+is|answer\s*[:\-])\s*[\(\[]?\s*([a-dA-D])(?![A-Za-z])"
 )
 PAREN_LETTER_SEARCH_REGEX = re.compile(r"\(([a-dA-D])\)")
 
-# Integer with optional sign and thousands separators; decimals truncated.
-INTEGER_EXTRACTION_REGEX = re.compile(r"-?\d[\d,]*")
+# A whole number: optional sign, thousands separators, and an optional decimal
+# part captured as ONE token (so '7.00' is a single match, not '7' then '00').
+NUMBER_EXTRACTION_REGEX = re.compile(r"-?\d[\d,]*(?:\.\d+)?")
+# Back-compat alias (older configs import INTEGER_EXTRACTION_REGEX).
+INTEGER_EXTRACTION_REGEX = NUMBER_EXTRACTION_REGEX
 
 # Legacy regex kept for back-compat with old configs.
 PARENTHESEIS_OUTPUT_IGNORE_REGEX = re.compile(r"\)")
@@ -70,16 +75,32 @@ def process_output_mcq(output: str) -> str:
     return cleaned
 
 
-def process_output_number(output: str) -> str:
-    """Extract a first integer for gsm8k direct.
+def _canonicalize_number(token: str) -> str:
+    """Normalize a matched number token to a canonical string for exact-string
+    comparison against bare-integer gold: strip thousands separators, and render
+    whole-valued floats as ints so '7', '7.0', '7.00' all become '7'. Non-integral
+    values keep their decimal form; unparseable tokens pass through unchanged."""
+    val = token.replace(",", "")
+    try:
+        f = float(val)
+    except ValueError:
+        return val
+    return str(int(f)) if f.is_integer() else str(f)
 
-    Normalizes thousands separators ('1,234' -> '1234'). Does not attempt
-    letter extraction so 'a 5' style outputs still resolve to '5'.
+
+def process_output_number(output: str) -> str:
+    """Extract the answer number for gsm8k.
+
+    Takes the LAST number in the cleaned text (GSM8k answers are conventionally
+    the final number; reasoning traces state intermediate numbers first), matches
+    whole numbers including any decimal part, and canonicalizes numerically
+    ('1,234' -> '1234', '7.00' -> '7'). Does not attempt letter extraction so
+    'a 5' style outputs still resolve to '5'.
     """
     cleaned = _strip_noise(output)
-    m = INTEGER_EXTRACTION_REGEX.search(cleaned)
-    if m:
-        return m.group(0).replace(",", "")
+    matches = NUMBER_EXTRACTION_REGEX.findall(cleaned)
+    if matches:
+        return _canonicalize_number(matches[-1])
     return cleaned
 
 
@@ -89,13 +110,18 @@ def process_output(output: str) -> str:
 
     Prefer process_output_mcq or process_output_number when the task type
     is known; this function exists for back-compat with configs that don't
-    pin fn_name."""
+    pin fn_name.
+
+    NOTE ordering hazard: number extraction runs before MCQ-letter extraction,
+    so an MCQ answer that contains a digit (e.g. 'option 2: b') resolves to the
+    number, not the letter. This is why the benchmark pins process_output_mcq /
+    process_output_number per task rather than relying on this general path."""
     cleaned = _strip_noise(output)
     cleaned_legacy = PARENTHESEIS_OUTPUT_IGNORE_REGEX.sub("", cleaned)
 
-    m = INTEGER_EXTRACTION_REGEX.search(cleaned_legacy)
-    if m:
-        return m.group(0).replace(",", "")
+    matches = NUMBER_EXTRACTION_REGEX.findall(cleaned_legacy)
+    if matches:
+        return _canonicalize_number(matches[-1])
 
     m = MCQ_LETTER_REGEX.match(cleaned)
     if m:
