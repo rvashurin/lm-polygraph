@@ -6,10 +6,12 @@ vs the current baseline:
 
   C0  direct 0-shot        current polygraph_eval_ugrip.yaml on
                            UGRIP-LM-Polygraph/<ds>-direct  (what we run today)
-  C1  direct few-shot      same, but K exemplars sampled from the dataset's
-                           train split are prepended to every question. Injected
-                           without touching core code via a local CSV fed through
-                           Dataset.from_csv (the chat template still applies).
+  C1  direct few-shot      a no-CoT few-shot prompt built from the paper's SOURCE
+                           data (cais/mmlu dev, gsm8k main train): one
+                           instruction + K solved 'Question -> bare answer' shots
+                           + the eval question. Written to a local CSV and fed
+                           through Dataset.from_csv with the same UGRIP eval
+                           settings as C0 (chat template applies).
   C2  paper config         the paper's own polygraph_eval_<ds>.yaml
                            (LM-Polygraph/<ds> 'continuation', few-shot baked in,
                            generate_until=['\\n'], tiny max_new_tokens) with the
@@ -56,40 +58,47 @@ MODELS = {
     "qwen": "ugrip_qwen25_instruct",
 }
 
-# per-dataset knobs. `paper_config` = None means "no paper config" (C0/C1 only).
-# `c2_extract` = whether to apply our extractor to the paper-config run too, so
-# the accuracy axis is comparable (only safe when the paper config sets no
-# normalize / ignore_regex — true for mmlu, false for gsm8k which is CoT).
+# per-dataset knobs.
+#   C0 uses the UGRIP direct dataset (`hf_direct`, `eval_split`, `process_fn`).
+#   C1 builds a DIRECT few-shot prompt from the paper's SOURCE dataset (`source`,
+#     `source_fewshot_split`, `source_eval_split`, `kind`) — clean questions,
+#     bare answers, no chain-of-thought.
+#   C2 runs the paper config (`paper_config`); None means "no paper config".
 DATASETS = {
     "mmlu": {
         "hf_direct": "UGRIP-LM-Polygraph/mmlu-direct",
         "eval_split": "test",
-        "few_shot_split": "dev",  # mmlu-direct has dev/test/validation (no train)
         "process_fn": "process_output_mcq",
+        "source": ["cais/mmlu", "all"],
+        "source_fewshot_split": "dev",
+        "source_eval_split": "test",
+        "kind": "mcq",
         "paper_config": "polygraph_eval_mmlu.yaml",
-        "c2_extract": True,
         "note": "clean no-CoT few-shot anchor",
     },
     "gsm8k": {
         "hf_direct": "UGRIP-LM-Polygraph/gsm8k-direct",
         "eval_split": "test",
-        "few_shot_split": "train",
         "process_fn": "process_output_number",
+        "source": ["gsm8k", "main"],
+        "source_fewshot_split": "train",
+        "source_eval_split": "test",
+        "kind": "number",
         "paper_config": "polygraph_eval_gsm8k.yaml",
-        "c2_extract": False,  # paper gsm8k is CoT + sets normalize/ignore_regex
         "note": "paper C2 is CoT — NOT a no-CoT comparison",
     },
-    # optional: no paper config, so C2 is skipped automatically.
+    # optional: no paper source/config wired -> C1/C2 skipped, C0 only.
     "medmcqa": {
         "hf_direct": "UGRIP-LM-Polygraph/medmcqa-direct",
         "eval_split": "validation",
-        "few_shot_split": "train",
         "process_fn": "process_output_mcq",
+        "source": None,
         "paper_config": None,
-        "c2_extract": False,
-        "note": "no paper config (C0/C1 only)",
+        "note": "no paper source/config (C0 only)",
     },
 }
+
+LETTERS = ["A", "B", "C", "D", "E", "F"]
 
 # datasets actually included in the default grid (medmcqa optional — add if wanted)
 GRID_DATASETS = ["mmlu", "gsm8k"]
@@ -120,57 +129,81 @@ def _csv_path(dataset: str) -> Path:
 # build: construct the C1 few-shot CSVs
 # --------------------------------------------------------------------------- #
 
+def _gsm8k_bare_answer(ans: str) -> str:
+    """GSM8k gold is '<reasoning> #### 18' -> return the bare number '18'."""
+    return ans.split("####")[-1].strip().replace(",", "")
+
+
+def _mcq_body(question: str, choices) -> str:
+    opts = "\n".join(f"{LETTERS[i]}. {c}" for i, c in enumerate(choices))
+    return f"Question: {str(question).strip()}\n{opts}\nAnswer:"
+
+
 def build():
-    """Build one few-shot CSV per dataset: K exemplars (from the train split)
-    prepended to every eval-split question, written in dataset order so that the
-    seeded subsample picks the same rows as the C0 run."""
-    from datasets import get_dataset_split_names, load_dataset
+    """Build one DIRECT few-shot CSV per dataset from the paper's SOURCE data.
+
+    Uses clean (question, answer) atoms — the same source datasets the paper
+    builders use (cais/mmlu dev; gsm8k main train) — and formats a no-CoT
+    few-shot prompt: one instruction, K solved 'Question -> bare answer' shots,
+    then the eval question. Eval rows come from the paper's eval split; every row
+    shares the same K-shot prefix, so the seeded subsample at eval time selects a
+    consistent subset. (Simplification vs the paper: a single global K-shot block
+    rather than per-subject exemplars for MMLU.)
+    """
+    from datasets import load_dataset
 
     (OUT_DIR / "csv").mkdir(parents=True, exist_ok=True)
     for ds in GRID_DATASETS:
         info = DATASETS[ds]
-        repo = info["hf_direct"]
-        print(f"[build] {ds}: loading {repo} ...")
+        if not info.get("source"):
+            print(f"[build] {ds}: no paper source wired — skipping (C0 only).")
+            continue
+        src, kind = info["source"], info["kind"]
+        print(f"[build] {ds}: loading source {src} ...")
+        few = load_dataset(*src, split=info["source_fewshot_split"])
+        test = load_dataset(*src, split=info["source_eval_split"])
+        k = min(N_SHOT, len(few))
 
-        # pick a few-shot source split that exists and is not the eval split
-        splits = get_dataset_split_names(repo)
-        fs_split = info["few_shot_split"]
-        if fs_split not in splits:
-            fs_split = next(
-                (s for s in ("dev", "train", "validation") if s in splits and s != info["eval_split"]),
-                None,
-            ) or next((s for s in splits if s != info["eval_split"]), info["eval_split"])
-            print(
-                f"[build] {ds}: few_shot_split '{info['few_shot_split']}' not found; "
-                f"using '{fs_split}' (available: {splits})"
+        if kind == "mcq":
+            header = (
+                "The following are multiple choice questions. Answer with ONLY "
+                "the letter of the correct option.\n\n"
             )
-        few = load_dataset(repo, split=fs_split)
-        # deterministic exemplar choice without Date/random-module surprises
-        idx = list(range(min(N_SHOT, len(few))))
-        prefix = ""
-        for i in idx:
-            q = str(few[i]["question"]).strip()
-            a = str(few[i]["answer"]).strip()
-            prefix += f"{q}\n{a}\n\n"
+            shots = "\n\n".join(
+                _mcq_body(few[i]["question"], few[i]["choices"]) + f" {LETTERS[few[i]['answer']]}"
+                for i in range(k)
+            )
+            rows = [
+                (header + shots + "\n\n" + _mcq_body(r["question"], r["choices"]),
+                 LETTERS[r["answer"]])
+                for r in test
+            ]
+        elif kind == "number":
+            header = "Answer each math question with ONLY the final number.\n\n"
+            shots = "\n\n".join(
+                f"Question: {str(few[i]['question']).strip()}\nAnswer: "
+                f"{_gsm8k_bare_answer(few[i]['answer'])}"
+                for i in range(k)
+            )
+            rows = [
+                (header + shots + f"\n\nQuestion: {str(r['question']).strip()}\nAnswer:",
+                 _gsm8k_bare_answer(r["answer"]))
+                for r in test
+            ]
+        else:
+            raise ValueError(f"unknown kind {kind!r} for dataset {ds}")
 
-        test = load_dataset(repo, split=info["eval_split"])
         out = _csv_path(ds)
         with out.open("w", newline="") as fh:
             w = csv.DictWriter(fh, fieldnames=["question", "answer"])
             w.writeheader()
-            for row in test:
-                w.writerow(
-                    {
-                        "question": prefix + str(row["question"]).strip(),
-                        "answer": row["answer"],
-                    }
-                )
-        print(f"[build] wrote {out} ({len(test)} rows, {len(idx)}-shot prefix)")
+            for q, a in rows:
+                w.writerow({"question": q, "answer": a})
+        print(f"[build] wrote {out} ({len(rows)} rows, {k}-shot DIRECT prefix from {src})")
     print(
-        "\n[build] NOTE: exemplars are concatenated as '<question>\\n<answer>' pairs "
-        "(dataset-agnostic). If the UGRIP `question` text already carries an "
-        "instruction, the K-shot block sits in front of the first one — inspect a "
-        "CSV row to confirm the format reads naturally."
+        "\n[build] NOTE: prompts are direct few-shot (no chain-of-thought), one "
+        "instruction + K solved shots + the eval question. Inspect a CSV row to "
+        "confirm it reads naturally before running."
     )
 
 
@@ -215,7 +248,9 @@ def commands():
             info = DATASETS[ds]
             fn = info["process_fn"]
 
-            # C0 — direct 0-shot baseline
+            print(f"# ---- {model_short} / {ds} ({info['note']}) ----")
+
+            # C0 — current UGRIP direct, 0-shot
             c0 = _cmd(
                 "polygraph_eval_ugrip.yaml",
                 f"model={model_cfg} dataset={info['hf_direct']} "
@@ -223,22 +258,22 @@ def commands():
                 f"subsample_eval_dataset={SUBSAMPLE}",
                 _run_dir("c0", model_short, ds),
             )
-            # C1 — direct few-shot (CSV built by `build`)
-            c1 = _cmd(
-                "polygraph_eval_ugrip.yaml",
-                f"model={model_cfg} dataset={_csv_path(ds)} "
-                f"{_process_overrides(fn)} subsample_eval_dataset={SUBSAMPLE}",
-                _run_dir("c1", model_short, ds),
-            )
-            print(f"# ---- {model_short} / {ds} ({info['note']}) ----")
             print(c0, "\n")
-            print(c1, "\n")
 
-            # C2 — paper config, run paper-native (only model + subsample +
-            # estimators overridden). Its extraction is the paper config's own
-            # (none for mmlu -> bare compare; regex for gsm8k), so C2's accuracy
-            # axis is NOT directly comparable to C0/C1 — the rigorous comparison
-            # is C0 vs C1. C2 shows how the paper pipeline behaves on our models.
+            # C1 — direct few-shot on the paper source data (CSV built by `build`),
+            # run with UGRIP generation settings (1024 tokens, no generate_until).
+            if info.get("source"):
+                c1 = _cmd(
+                    "polygraph_eval_ugrip.yaml",
+                    f"model={model_cfg} dataset={_csv_path(ds)} "
+                    f"{_process_overrides(fn)} subsample_eval_dataset={SUBSAMPLE}",
+                    _run_dir("c1", model_short, ds),
+                )
+                print(c1, "\n")
+
+            # C2 — paper config, run paper-native (only model/subsample/estimators
+            # overridden). Uses the paper's generation settings (generate_until +
+            # tiny max_new_tokens) and its own extraction.
             if info["paper_config"]:
                 c2 = (
                     "uv run --python 3.11 scripts/polygraph_eval "
@@ -248,8 +283,11 @@ def commands():
                 )
                 print(c2, "\n")
     print(
-        "# NOTE: C0 vs C1 is the rigorous comparison (identical extraction). C2 "
-        "runs the paper config paper-native; gsm8k-C2 is CoT, not a no-CoT point."
+        "# NOTE: C0 = UGRIP direct 0-shot; C1 = paper-source DIRECT few-shot with "
+        "UGRIP generation (1024 tok, no stop); C2 = paper config (paper few-shot "
+        "+ generate_until + tiny max_new_tokens). C0->C1 shows the few-shot effect "
+        "(different eval set: UGRIP vs paper source, same task); C1->C2 isolates "
+        "the generation-limit effect. gsm8k-C2 is CoT, not a no-CoT point."
     )
 
 
