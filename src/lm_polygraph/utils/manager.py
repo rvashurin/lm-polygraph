@@ -173,8 +173,6 @@ class UEManager:
         self.gen_metrics: Dict[Tuple[str, str], List[float]] = defaultdict(list)
         self.estimations: Dict[Tuple[str, str], List[float]] = defaultdict(list)
         self.metrics: Dict[Tuple[str, str, str, str], float] = {}
-        # overall (mean) value of each generation metric, e.g. accuracy
-        self.gen_metric_means: Dict[Tuple[str, str], float] = {}
         self.total_bad_estimators: Dict[Estimator, float] = {}
         self.stats: Dict[str, List] = defaultdict(list)
 
@@ -514,7 +512,7 @@ class UEManager:
                 self.gen_metrics[generation_metric.level, str(generation_metric)] += m
                 batch_gen_metrics[generation_metric.level, str(generation_metric)] += m
 
-            for key in ["greedy_texts", "greedy_tokens", "greedy_log_likelihoods", "greedy_texts_full", "empty_slice", "attention_all", "attention_selected", "mark", "input_tokens"]:
+            for key in ["greedy_texts", "greedy_tokens", "greedy_log_likelihoods", "greedy_texts_full", "attention_all", "attention_selected", "mark", "input_tokens"]:
                 if key in batch_stats.keys():
                     self.stats[key] += batch_stats[key]
             for processor in self.processors:
@@ -523,27 +521,6 @@ class UEManager:
         self._process(iterable_data, fn_on_batch_callback)
 
         for (gen_level, gen_name), generation_metric in self.gen_metrics.items():
-            # UGRIP: surgically drop samples whose UQ slice was empty (answer
-            # marker missing) so their degenerate estimator values (MSP/TokenSAR
-            # -> 0.0, PPL/MTE -> NaN -> clipped to -1e7) do not bias PRR. The mask
-            # is per-sample and estimator-independent, so it is applied uniformly
-            # to every estimator below. _delete_nans / its #313 clipping are left
-            # untouched for genuine estimator NaNs.
-            empty_keep_mask = None
-            empty_slice = self.stats.get("empty_slice")
-            if (
-                gen_level == "sequence"
-                and empty_slice
-                and len(empty_slice) == len(generation_metric)
-            ):
-                mask = ~np.asarray(empty_slice, dtype=bool)
-                if int(mask.sum()) < len(mask):  # at least one empty slice to drop
-                    empty_keep_mask = mask
-                    log.info(
-                        f"Dropping {int((~mask).sum())}/{len(mask)} empty-slice "
-                        f"samples from PRR for generation metric '{gen_name}'."
-                    )
-
             for ue_metric in self.ue_metrics:
                 log.info(f"Metric: {ue_metric}")
 
@@ -572,16 +549,7 @@ class UEManager:
                             f"We got {n_nans} nans in {gen_name} generation metric."
                         )
 
-                    # Apply the empty-slice mask (if any) before NaN handling.
-                    # len(ue) is compared to the ORIGINAL estimator_values length
-                    # below, so any dropped rows route through the reduced-set
-                    # oracle/random recompute path.
-                    ev_use, gm_use = estimator_values, generation_metric
-                    if empty_keep_mask is not None:
-                        ev_use = np.asarray(estimator_values)[empty_keep_mask]
-                        gm_use = np.asarray(generation_metric)[empty_keep_mask]
-
-                    ue, metric = _delete_nans(ev_use, gm_use)
+                    ue, metric = _delete_nans(estimator_values, generation_metric)
                     if len(ue) == 0:
                         self.metrics[e_level, e_name, gen_name, str(ue_metric)] = np.nan
                     else:
@@ -599,20 +567,6 @@ class UEManager:
                         self.metrics[
                             e_level, e_name, gen_name, str(ue_metric) + "_normalized"
                         ] = normalize_metric(ue_metric_val, oracle_score, random_score)
-
-        # UGRIP: overall (mean) value of each generation metric — e.g. accuracy —
-        # so it is logged per run and persisted, not just left as the per-sample
-        # array. Computed over ALL evaluated samples (empty-slice rows are only
-        # dropped from PRR above, not from accuracy).
-        self.gen_metric_means = {}
-        for (g_level, g_name), g_vals in self.gen_metrics.items():
-            arr = np.asarray(g_vals, dtype=float)
-            finite = arr[np.isfinite(arr)]
-            mean_val = float(finite.mean()) if finite.size else float("nan")
-            self.gen_metric_means[(g_level, g_name)] = mean_val
-            log.info(
-                f"Mean {g_name} [{g_level}]: {mean_val:.4f} (n={arr.size})"
-            )
 
         for processor in self.processors:
             processor.on_eval(self.metrics, self.total_bad_estimators)
@@ -634,7 +588,6 @@ class UEManager:
                 "state": self.state,
                 "metrics": self.metrics,
                 "gen_metrics": self.gen_metrics,
-                "gen_metric_means": self.gen_metric_means,
                 "estimations": self.estimations,
                 "stats": self.stats,
             },
@@ -677,7 +630,6 @@ class UEManager:
 
         man.metrics = res_dict.get("metrics", None)
         man.gen_metrics = res_dict.get("gen_metrics", None)
-        man.gen_metric_means = res_dict.get("gen_metric_means", {})
         man.estimations = res_dict.get("estimations", None)
         man.stats = res_dict.get("stats", None)
         return man
