@@ -64,7 +64,7 @@ DATASETS = {
     "mmlu": {
         "hf_direct": "UGRIP-LM-Polygraph/mmlu-direct",
         "eval_split": "test",
-        "few_shot_split": "train",
+        "few_shot_split": "dev",  # mmlu-direct has dev/test/validation (no train)
         "process_fn": "process_output_mcq",
         "paper_config": "polygraph_eval_mmlu.yaml",
         "c2_extract": True,
@@ -124,14 +124,27 @@ def build():
     """Build one few-shot CSV per dataset: K exemplars (from the train split)
     prepended to every eval-split question, written in dataset order so that the
     seeded subsample picks the same rows as the C0 run."""
-    from datasets import load_dataset
+    from datasets import get_dataset_split_names, load_dataset
 
     (OUT_DIR / "csv").mkdir(parents=True, exist_ok=True)
     for ds in GRID_DATASETS:
         info = DATASETS[ds]
         repo = info["hf_direct"]
         print(f"[build] {ds}: loading {repo} ...")
-        few = load_dataset(repo, split=info["few_shot_split"])
+
+        # pick a few-shot source split that exists and is not the eval split
+        splits = get_dataset_split_names(repo)
+        fs_split = info["few_shot_split"]
+        if fs_split not in splits:
+            fs_split = next(
+                (s for s in ("dev", "train", "validation") if s in splits and s != info["eval_split"]),
+                None,
+            ) or next((s for s in splits if s != info["eval_split"]), info["eval_split"])
+            print(
+                f"[build] {ds}: few_shot_split '{info['few_shot_split']}' not found; "
+                f"using '{fs_split}' (available: {splits})"
+            )
+        few = load_dataset(repo, split=fs_split)
         # deterministic exemplar choice without Date/random-module surprises
         idx = list(range(min(N_SHOT, len(few))))
         prefix = ""
