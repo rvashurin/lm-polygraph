@@ -32,8 +32,8 @@ class ConfidenceLeapCalculator(StatCalculator):
         self,
         max_chunks: int = 40,
         reasoning_open: str = "<think>\n",
-        reasoning_close: str = "\n</think>\n",
-        answer_prefix: str = "\\boxed{",
+        reasoning_close: str = "\n</think>\n\n",
+        answer_prefix: str = "",
         triggers: Optional[List[str]] = None,
     ):
         super().__init__()

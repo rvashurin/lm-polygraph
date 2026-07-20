@@ -60,6 +60,11 @@ def load_simple_estimators(name: str, config):
         CSL,
         SemanticDensity,
         BoostedProbSequence,
+        ConfidenceLeapFinalConfidence,
+        ConfidenceLeapMeanConfidence,
+        ConfidenceLeapMaxConfidence,
+        ConfidenceLeapMaxJump,
+        ConfidenceLeapNumChanges,
     ]
 
     try:

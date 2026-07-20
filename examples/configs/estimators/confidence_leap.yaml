@@ -1,0 +1,5 @@
+- name: ConfidenceLeapFinalConfidence
+- name: ConfidenceLeapMeanConfidence
+- name: ConfidenceLeapMaxConfidence
+- name: ConfidenceLeapMaxJump
+- name: ConfidenceLeapNumChanges

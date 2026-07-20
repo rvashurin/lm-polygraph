@@ -389,6 +389,7 @@ def get_whitebox_model(args, cache_kwargs={}):
             device_map=args.model.load_model_args.device_map,
             add_bos_token=getattr(args.model, "add_bos_token", True),
             instruct=getattr(args, "instruct", False),
+            chat_template_kwargs=getattr(args.model, "chat_template_kwargs", {}),
             **cache_kwargs,
         )
 
@@ -414,7 +415,8 @@ def get_whitebox_model(args, cache_kwargs={}):
         args.model.path,
         args.model.type,
         generation_params,
-        instruct=getattr(args, "instruct", False)
+        instruct=getattr(args, "instruct", False),
+        chat_template_kwargs=getattr(args.model, "chat_template_kwargs", {}),
     )
 
     return model

@@ -1,0 +1,14 @@
+defaults:
+  - default
+
+path: Qwen/Qwen3.5-27B
+type: CausalLM
+path_to_load_script: model/qwen3_5_27b.py
+
+chat_template_kwargs:
+  enable_thinking: true
+
+load_model_args:
+  device_map: auto
+  torch_dtype: auto
+load_tokenizer_args: {}

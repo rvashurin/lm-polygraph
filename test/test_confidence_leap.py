@@ -1,5 +1,7 @@
 import numpy as np
 import torch
+from pathlib import Path
+from importlib.util import module_from_spec, spec_from_file_location
 
 from lm_polygraph.estimators import (
     ConfidenceLeapFinalConfidence,
@@ -10,6 +12,7 @@ from lm_polygraph.defaults.register_default_stat_calculators import (
     register_default_stat_calculators,
 )
 from lm_polygraph.stat_calculators.confidence_leap import ConfidenceLeapCalculator
+from lm_polygraph.utils.factory_estimator import FactoryEstimator
 from lm_polygraph.utils.manager import order_calculators
 from lm_polygraph.utils.model import WhiteboxModel
 
@@ -17,13 +20,18 @@ from lm_polygraph.utils.model import WhiteboxModel
 class _ChatTemplateTokenizer:
     chat_template = "dummy"
 
+    def __init__(self):
+        self.template_kwargs = []
+
     def apply_chat_template(
         self,
         messages,
         tokenize=False,
         add_generation_prompt=False,
         continue_final_message=False,
+        **kwargs,
     ):
+        self.template_kwargs.append(kwargs)
         rendered = "".join(
             f"<|{message['role']}|>{message.get('content', '')}"
             for message in messages
@@ -33,6 +41,15 @@ class _ChatTemplateTokenizer:
         if not continue_final_message:
             rendered += "<|end|>"
         return rendered
+
+    def __call__(
+        self,
+        texts,
+        padding=True,
+        return_tensors="pt",
+        add_special_tokens=False,
+    ):
+        return {"input_ids": torch.ones((len(texts), 1), dtype=torch.long)}
 
 
 class _LegacyChatTemplateTokenizer:
@@ -54,6 +71,24 @@ def test_format_assistant_continuation_uses_open_final_assistant_message():
     rendered = model.format_assistant_continuation("Question?", "partial answer")
 
     assert rendered == "<|user|>Question?<|assistant|>partial answer"
+
+
+def test_chat_template_kwargs_are_passed_to_prompt_and_continuation_formatting():
+    tokenizer = _ChatTemplateTokenizer()
+    model = WhiteboxModel(
+        None,
+        tokenizer,
+        instruct=True,
+        chat_template_kwargs={"enable_thinking": False},
+    )
+
+    model.tokenize(["Question?"])
+    model.format_assistant_continuation("Question?", "partial answer")
+
+    assert tokenizer.template_kwargs == [
+        {"enable_thinking": False},
+        {"enable_thinking": False},
+    ]
 
 
 def test_format_assistant_continuation_falls_back_for_legacy_chat_templates():
@@ -139,6 +174,7 @@ def test_confidence_leap_calculator_emits_chunks_probs_and_metrics():
     assert metrics["num_changes"] == 1
     assert metrics["max_jump"]["option"] == "B"
     assert metrics["final_prediction"] == "B"
+    assert model.prefixes[-1].endswith("</think>\n\n")
 
 
 def test_confidence_leap_estimators_follow_uncertainty_direction():
@@ -171,3 +207,24 @@ def test_default_registry_resolves_confidence_leap_dependencies():
     assert ordered == ["greedy_tokens", "confidence_leap_metrics"]
     assert "confidence_leap_chunks" in have_stats
     assert "confidence_leap_metrics" in have_stats
+
+
+def test_factory_builds_confidence_leap_estimators_by_simple_name():
+    estimator = FactoryEstimator()("ConfidenceLeapFinalConfidence", {})
+
+    assert isinstance(estimator, ConfidenceLeapFinalConfidence)
+
+
+def test_qwen_mmlu_processing_strips_thinking_and_extracts_option():
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "examples/configs/instruct/output_processing_scripts/qwen.py"
+    )
+    spec = spec_from_file_location("qwen_processing", path)
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    output = "<think>\nA could work, but B is better.\n</think>\n\nThe answer is B."
+
+    assert module.process_output_mmlu(output) == "B"
+    assert module.process_target_mmlu("b") == "B"

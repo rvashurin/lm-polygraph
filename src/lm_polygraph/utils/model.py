@@ -404,6 +404,7 @@ class WhiteboxModel(Model):
         model_type: str = "CausalLM",
         generation_parameters: GenerationParameters = GenerationParameters(),
         instruct: bool = False,
+        chat_template_kwargs: Optional[Dict] = None,
     ):
         """
         Parameters:
@@ -418,6 +419,7 @@ class WhiteboxModel(Model):
         self.tokenizer = tokenizer
         self.generation_parameters = generation_parameters
         self.instruct = instruct
+        self.chat_template_kwargs = dict(chat_template_kwargs or {})
 
     def _validate_args(self, args):
         """
@@ -612,6 +614,7 @@ class WhiteboxModel(Model):
                 messages,
                 tokenize=False,
                 continue_final_message=True,
+                **self.chat_template_kwargs,
             )
         except TypeError:
             if not messages or messages[-1].get("role") != "assistant":
@@ -622,6 +625,7 @@ class WhiteboxModel(Model):
                 prompt_messages,
                 add_generation_prompt=True,
                 tokenize=False,
+                **self.chat_template_kwargs,
             )
             return header + assistant_content
 
@@ -669,6 +673,8 @@ class WhiteboxModel(Model):
         model_path: str,
         generation_params: Optional[Dict] = {},
         add_bos_token: bool = True,
+        instruct: bool = False,
+        chat_template_kwargs: Optional[Dict] = None,
         **kwargs,
     ):
         """
@@ -740,7 +746,13 @@ class WhiteboxModel(Model):
         )
 
         instance = WhiteboxModel(
-            model, tokenizer, model_path, model_type, generation_params
+            model,
+            tokenizer,
+            model_path,
+            model_type,
+            generation_params,
+            instruct=instruct,
+            chat_template_kwargs=chat_template_kwargs,
         )
 
         return instance
@@ -764,7 +776,10 @@ class WhiteboxModel(Model):
                 if isinstance(chat, str):
                     chat = [{"role": "user", "content": chat}]
                 formatted_chat = self.tokenizer.apply_chat_template(
-                    chat, add_generation_prompt=True, tokenize=False
+                    chat,
+                    add_generation_prompt=True,
+                    tokenize=False,
+                    **self.chat_template_kwargs,
                 )
                 formatted_texts.append(formatted_chat)
             texts = formatted_texts

@@ -11,7 +11,6 @@ defaults:
 cache_path: ./workdir/output
 save_path: '${hydra:run.dir}'
 instruct: true
-normalize: true
 task: qa
 
 dataset: ['LM-Polygraph/mmlu', 'simple_instruct']
@@ -19,12 +18,17 @@ text_column: input
 label_column: output
 train_split: train
 eval_split: test
-max_new_tokens: 3
+max_new_tokens: 2000
 load_from_disk: false
 size: 10000
-generation_params:
-  stop_strings:
-    - "\n"
+generation_params: {}
+
+process_output_fn:
+  path: instruct/output_processing_scripts/qwen.py
+  fn_name: process_output_mmlu
+process_target_fn:
+  path: instruct/output_processing_scripts/qwen.py
+  fn_name: process_target_mmlu
 
 subsample_eval_dataset: -1
 
