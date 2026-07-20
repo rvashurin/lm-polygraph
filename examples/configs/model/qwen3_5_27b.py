@@ -1,6 +1,6 @@
 import torch
 import transformers
-from transformers import AutoProcessor, AutoTokenizer
+from transformers import AutoTokenizer
 
 
 def _resolve_torch_dtype(torch_dtype):
@@ -43,15 +43,12 @@ def load_model(
 
 
 def load_tokenizer(model_path: str, add_bos_token: bool = True):
-    processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
-    tokenizer = getattr(processor, "tokenizer", None)
-    if tokenizer is None:
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path,
-            padding_side="left",
-            add_bos_token=add_bos_token,
-            trust_remote_code=True,
-        )
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_path,
+        padding_side="left",
+        add_bos_token=add_bos_token,
+        trust_remote_code=True,
+    )
 
     tokenizer.padding_side = "left"
     if hasattr(tokenizer, "add_bos_token"):
