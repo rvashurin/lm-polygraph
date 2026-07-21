@@ -12,3 +12,9 @@ output_attentions: false
 
 generation_metrics:
   - name: AccuracyMetric
+
+save_stats:
+  - greedy_texts
+  - greedy_tokens
+  - greedy_log_likelihoods
+  - entropy

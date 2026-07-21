@@ -14,6 +14,9 @@ generation_metrics:
   - name: AccuracyMetric
 
 save_stats:
+  - greedy_texts
+  - greedy_tokens
+  - greedy_log_likelihoods
   - confidence_leap_status
   - confidence_leap_metrics
   - confidence_leap_chunks
