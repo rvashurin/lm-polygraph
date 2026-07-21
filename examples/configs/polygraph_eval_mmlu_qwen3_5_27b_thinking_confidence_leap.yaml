@@ -1,7 +1,7 @@
 defaults:
   - polygraph_eval_mmlu_simple_instruct
   - override /model: qwen3_5_27b_thinking
-  - override /estimators: confidence_leap
+  - override /estimators: confidence_leap_and_simple_uncertainty
   - override /stat_calculators: default_calculators
   - _self_
 
@@ -17,6 +17,7 @@ save_stats:
   - greedy_texts
   - greedy_tokens
   - greedy_log_likelihoods
+  - entropy
   - confidence_leap_status
   - confidence_leap_metrics
   - confidence_leap_chunks

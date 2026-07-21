@@ -1,0 +1,8 @@
+- name: ConfidenceLeapFinalConfidence
+- name: ConfidenceLeapMeanConfidence
+- name: ConfidenceLeapMaxConfidence
+- name: ConfidenceLeapMaxJump
+- name: ConfidenceLeapNumChanges
+- name: MaximumSequenceProbability
+- name: Perplexity
+- name: MeanTokenEntropy
