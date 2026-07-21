@@ -10,6 +10,7 @@ from lm_polygraph.utils.model import WhiteboxModel
 
 DEFAULT_TRIGGERS = ("Wait", "Alternatively", "Hmm", "Perhaps", "Maybe", "But", "However")
 OPTION_LABELS = ("A", "B", "C", "D")
+DEFAULT_ANSWER_PREFIX = "\\boxed{"
 
 
 class ConfidenceLeapCalculator(StatCalculator):
@@ -33,7 +34,7 @@ class ConfidenceLeapCalculator(StatCalculator):
         max_chunks: int = 40,
         reasoning_open: str = "<think>\n",
         reasoning_close: str = "\n</think>\n\n",
-        answer_prefix: str = "",
+        answer_prefix: str = DEFAULT_ANSWER_PREFIX,
         triggers: Optional[List[str]] = None,
     ):
         super().__init__()

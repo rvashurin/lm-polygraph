@@ -174,7 +174,7 @@ def test_confidence_leap_calculator_emits_chunks_probs_and_metrics():
     assert metrics["num_changes"] == 1
     assert metrics["max_jump"]["option"] == "B"
     assert metrics["final_prediction"] == "B"
-    assert model.prefixes[-1].endswith("</think>\n\n")
+    assert model.prefixes[-1].endswith("</think>\n\n\\boxed{")
 
 
 def test_confidence_leap_estimators_follow_uncertainty_direction():
