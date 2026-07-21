@@ -1,7 +1,7 @@
 defaults:
   - polygraph_eval_mmlu_simple_instruct
   - override /model: qwen3_5_27b_non_thinking
-  - override /estimators: confidence_leap
+  - override /estimators: simple_uncertainty
   - override /stat_calculators: default_calculators
   - _self_
 
@@ -12,10 +12,3 @@ output_attentions: false
 
 generation_metrics:
   - name: AccuracyMetric
-
-save_stats:
-  - confidence_leap_status
-  - confidence_leap_metrics
-  - confidence_leap_chunks
-  - confidence_leap_predictions
-  - confidence_leap_option_probs
