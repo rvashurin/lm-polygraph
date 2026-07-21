@@ -212,6 +212,10 @@ class Dataset:
         """
         dataset_name, dataset = Dataset.load_hf_dataset(dataset_path, split, **kwargs)
 
+        dataset = Dataset.limit_mmlu_subject_size(
+            dataset, dataset_name, mmlu_max_subject_size
+        )
+
         if size is not None and size < len(dataset):
             dataset = dataset.select(range(size))
 
@@ -231,6 +235,28 @@ class Dataset:
         images = dataset[im_column] if im_column else None
 
         return Dataset(x, y, batch_size, images=images)
+
+    @staticmethod
+    def limit_mmlu_subject_size(dataset, dataset_name: str, max_subject_size: int):
+        if max_subject_size is None or max_subject_size < 1:
+            return dataset
+        if "mmlu" not in str(dataset_name).lower():
+            return dataset
+        if "subject" not in getattr(dataset, "column_names", []):
+            return dataset
+
+        selected_indices = []
+        subject_counts = {}
+        for index, subject in enumerate(dataset["subject"]):
+            subject_count = subject_counts.get(subject, 0)
+            if subject_count >= max_subject_size:
+                continue
+            selected_indices.append(index)
+            subject_counts[subject] = subject_count + 1
+
+        if len(selected_indices) == len(dataset):
+            return dataset
+        return dataset.select(selected_indices)
 
     @staticmethod
     def load(path_or_path_and_files: Union[str, List[str]], *args, **kwargs):
