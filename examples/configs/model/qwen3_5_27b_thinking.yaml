@@ -11,5 +11,5 @@ chat_template_kwargs:
 load_model_args:
   device_map: auto
   torch_dtype: auto
-  attn_implementation: eager
+  attn_implementation: sdpa
 load_tokenizer_args: {}
