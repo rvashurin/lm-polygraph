@@ -3,11 +3,11 @@ import re
 
 _THINK_BLOCK_RE = re.compile(r"(?is)<think>.*?</think>")
 _SPECIAL_TOKEN_RE = re.compile(r"<\|[^>]+?\|>")
-_ANSWER_PATTERNS = (
-    re.compile(r"(?is)\b(?:answer|guess|option|choice)\b\s*(?:is|:)?\s*[\(\[]?\s*([ABCD])\b"),
-    re.compile(r"(?is)^\s*[\(\[]?\s*([ABCD])\b"),
-    re.compile(r"(?is)\b([ABCD])\s*(?:[\)\].,:;!?]|$)"),
+_BOXED_ANSWER_RE = re.compile(r"(?is)\\boxed\s*\{\s*([ABCD])\s*\}")
+_STRICT_ANSWER_LINE_RE = re.compile(
+    r"(?im)^\s*(?:final\s+answer|answer|guess|option|choice)\s*(?:is|:)?\s*[\(\[]?\s*([ABCD])\s*[\)\].,:;!]?\s*$"
 )
+_BARE_ANSWER_RE = re.compile(r"(?is)^\s*[\(\[]?\s*([ABCD])\s*[\)\].,:;!]?\s*$")
 
 
 def strip_qwen_thinking(text: str) -> str:
@@ -26,10 +26,19 @@ def strip_qwen_thinking(text: str) -> str:
 
 def normalize_mmlu_answer(text: str) -> str:
     text = strip_qwen_thinking(text)
-    for pattern in _ANSWER_PATTERNS:
-        match = pattern.search(text)
-        if match:
-            return match.group(1).upper()
+
+    boxed_matches = list(_BOXED_ANSWER_RE.finditer(text))
+    if boxed_matches:
+        return boxed_matches[-1].group(1).upper()
+
+    line_matches = list(_STRICT_ANSWER_LINE_RE.finditer(text))
+    if line_matches:
+        return line_matches[-1].group(1).upper()
+
+    match = _BARE_ANSWER_RE.match(text)
+    if match:
+        return match.group(1).upper()
+
     return text.strip().upper()
 
 

@@ -35,6 +35,7 @@ DATASET_MAP: Dict[str, Tuple[str, str]] = {
     "mmlu_verb_2s_top1": ("mmlu", "verb_2s_top1"),
     "mmlu_verb_2s_topk": ("mmlu", "verb_2s_topk"),
     "mmlu_simple_instruct": ("mmlu", "simple_instruct"),
+    "mmlu_qwen_simple_instruct": ("mmlu", "qwen_simple_instruct"),
     # person
     "person_bio_ar": ("person_bio", "ar"),
     "person_bio_en": ("person_bio", "en"),

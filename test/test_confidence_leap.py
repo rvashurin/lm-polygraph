@@ -224,7 +224,21 @@ def test_qwen_mmlu_processing_strips_thinking_and_extracts_option():
     module = module_from_spec(spec)
     spec.loader.exec_module(module)
 
-    output = "<think>\nA could work, but B is better.\n</think>\n\nThe answer is B."
+    output = "<think>\nA could work, but B is better.\n</think>\n\nThe answer is \\boxed{B}."
 
     assert module.process_output_mmlu(output) == "B"
     assert module.process_target_mmlu("b") == "B"
+
+
+def test_qwen_mmlu_processing_does_not_extract_option_from_reasoning_prose():
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "examples/configs/instruct/output_processing_scripts/qwen.py"
+    )
+    spec = spec_from_file_location("qwen_processing", path)
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    output = "The user wants me to answer a multiple-choice question. I need to compare A and B."
+
+    assert module.process_output_mmlu(output) != "A"

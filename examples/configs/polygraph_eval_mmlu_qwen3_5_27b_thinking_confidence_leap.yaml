@@ -6,6 +6,7 @@ defaults:
   - _self_
 
 mmlu_max_subject_size: 100
+dataset: ['rvashurin/mmlu', 'qwen_simple_instruct']
 max_new_tokens: 2000
 subsample_eval_dataset: -1
 output_attentions: false

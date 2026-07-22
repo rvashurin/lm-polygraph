@@ -44,6 +44,7 @@ DATASETS=(
   mmlu_verb_2s_top1
   mmlu_verb_2s_topk
   mmlu_simple_instruct
+  mmlu_qwen_simple_instruct
 
   # person
   person_bio_ar
