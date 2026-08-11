@@ -1,9 +1,20 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
-def load_model(model_path: str, device_map: str):
+def load_model(
+    model_path: str,
+    device_map: str,
+    attn_implementation: str | None = None,
+):
+    load_kwargs = {
+        "trust_remote_code": True,
+        "device_map": device_map,
+    }
+    if attn_implementation is not None:
+        load_kwargs["attn_implementation"] = attn_implementation
+
     model = AutoModelForCausalLM.from_pretrained(
-        model_path, trust_remote_code=True, device_map=device_map
+        model_path, **load_kwargs
     )
     model.eval()
 

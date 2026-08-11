@@ -411,6 +411,41 @@ class UEManager:
 
         return batch_estimations, bad_estimators
 
+    def _filter_failed_generations(self, batch_stats: dict) -> dict:
+        failed_generation = batch_stats.get("failed_generation")
+        if failed_generation is None:
+            return batch_stats
+
+        failed_generation = list(failed_generation)
+        if len(failed_generation) == 0 or not any(failed_generation):
+            return batch_stats
+
+        valid_indices = [
+            i for i, failed in enumerate(failed_generation) if not failed
+        ]
+        batch_size = len(failed_generation)
+        log.warning(
+            f"Skipping {batch_size - len(valid_indices)} failed generations in current batch."
+        )
+
+        for key, value in list(batch_stats.items()):
+            if key in ["model", "tokenizer"] or isinstance(value, (str, bytes)):
+                continue
+            try:
+                if len(value) != batch_size:
+                    continue
+            except TypeError:
+                continue
+
+            if isinstance(value, np.ndarray):
+                batch_stats[key] = value[valid_indices]
+            elif torch.is_tensor(value):
+                batch_stats[key] = value[valid_indices]
+            else:
+                batch_stats[key] = [value[i] for i in valid_indices]
+
+        return batch_stats
+
     def _process(self, iterable_data, batch_callback):
         iterable_data = tqdm(self.data) if self.verbose else self.data
         for batch_i, (inp_texts, target_texts) in enumerate(iterable_data):
@@ -419,11 +454,17 @@ class UEManager:
                 ("input_texts", inp_texts),
                 ("target_texts", target_texts),
             ]:
-                self.stats[key] += val
                 batch_stats[key] = val
             batch_stats["model"] = self.model
 
             batch_stats = self.calculate(batch_stats, self.stat_calculators, inp_texts)
+            batch_stats = self._filter_failed_generations(batch_stats)
+            target_texts = batch_stats["target_texts"]
+
+            if len(target_texts) == 0:
+                torch.cuda.empty_cache()
+                gc.collect()
+                continue
 
             batch_estimations, bad_estimators = self.estimate(
                 batch_stats, self.estimators
@@ -512,7 +553,7 @@ class UEManager:
                 self.gen_metrics[generation_metric.level, str(generation_metric)] += m
                 batch_gen_metrics[generation_metric.level, str(generation_metric)] += m
 
-            for key in ["greedy_texts", "greedy_tokens", "greedy_log_likelihoods", "greedy_texts_full", "attention_all", "attention_selected", "mark", "input_tokens"]:
+            for key in ["input_texts", "target_texts", "greedy_texts", "greedy_tokens", "greedy_log_likelihoods", "greedy_texts_full", "failed_generation", "attention_all", "attention_selected", "input_tokens"]: # "mark",
                 if key in batch_stats.keys():
                     self.stats[key] += batch_stats[key]
             for processor in self.processors:

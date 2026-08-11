@@ -33,6 +33,7 @@ class GreedyProbsCalculator(StatCalculator):
             "greedy_tokens_alternatives",
             "greedy_texts",
             "greedy_texts_full", # UGRIP: To account for reasoning-only analysis
+            "failed_generation",
             "greedy_log_likelihoods",
             "embeddings",
             "attention_all",
@@ -189,6 +190,8 @@ class GreedyProbsCalculator(StatCalculator):
         cut_texts = []
         cut_alternatives = []
         all_slice_start_indices = []
+        attention_lengths = []
+        failed_generation = []
 
         marker_tokens = []
         if self.answer_marker:
@@ -214,9 +217,13 @@ class GreedyProbsCalculator(StatCalculator):
             full_texts.append(model.tokenizer.decode(full_gen_seq[:full_text_length]))
             # END UGRIP
 
+            print(full_gen_seq)
+            print(len(full_gen_seq))
+
             slice_start_idx = 0
             slice_end_idx = len(full_gen_seq)
             marker_pos = -1
+            failed = False
 
             if self.slicing_target and len(marker_tokens) > 0:
                 marker_pos = self._find_token_subsequence(full_gen_seq.tolist(), len(marker_tokens), self.answer_marker, model.tokenizer)
@@ -225,8 +232,8 @@ class GreedyProbsCalculator(StatCalculator):
                 if marker_pos != -1:
                     slice_start_idx = marker_pos + len(marker_tokens)
                 else:
-                    # If marker not found for answer mode, produces empty result
-                    slice_start_idx, slice_end_idx = 0, 0
+                    failed = True
+                    slice_start_idx, slice_end_idx = 0, len(full_gen_seq)
             elif self.slicing_target == "reasoning":
                 if marker_pos != -1:
                     slice_end_idx = marker_pos
@@ -245,23 +252,29 @@ class GreedyProbsCalculator(StatCalculator):
 
             final_seq_tokens = seq[:length].tolist()
             final_seq_text_tokens = seq[:text_length]
+            full_seq_tokens = full_gen_seq[:full_text_length].tolist()
+            full_seq_text_tokens = full_gen_seq[:full_text_length]
 
-            cut_sequences.append(final_seq_tokens)
-            cut_texts.append(model.tokenizer.decode(final_seq_text_tokens))
+            cut_sequences.append(full_seq_tokens)
+            cut_text = model.tokenizer.decode(full_seq_text_tokens)
+            if self.slicing_target == "answer" and not final_seq_text_tokens.size(0):
+                failed = True
+            cut_texts.append(cut_text)
+            failed_generation.append(failed)
 
-            cut_logits.append(logits[i, slice_start_idx : slice_start_idx + length, :].cpu().numpy())
+            cut_logits.append(logits[i, :full_text_length, :].cpu().numpy())
+            attention_lengths.append(length)
 
-            cut_alternatives.append([[] for _ in range(length)])
-            for j in range(length):
-                # Absolute offset
-                lt = logits[i, j + slice_start_idx, :].cpu().numpy()
+            cut_alternatives.append([[] for _ in range(full_text_length)])
+            for j in range(full_text_length):
+                lt = logits[i, j, :].cpu().numpy()
                 best_tokens = np.argpartition(lt, -self.n_alternatives)
                 ln = len(best_tokens)
                 best_tokens = best_tokens[ln - self.n_alternatives : ln]
                 for t in best_tokens:
                     cut_alternatives[-1][j].append((t.item(), lt[t].item()))
                 cut_alternatives[-1][j].sort(
-                    key=lambda x: str(x)[0] == str(final_seq_tokens[j]),
+                    key=lambda x: str(x)[0] == str(full_seq_tokens[j]),
                     reverse=True,
                 )
 
@@ -292,13 +305,15 @@ class GreedyProbsCalculator(StatCalculator):
         attention_all = []
         attention_selected = []
 
+        # print("!!!!!!!!!!! self.output_attentions", self.output_attentions)
+
         if self.output_attentions and (model.model_type != "vLLMCausalLM"):
             config = model.model.config
             if hasattr(config, 'text_config'):
                 config = config.text_config
             for i in range(len(texts)):
                 slice_start_idx = all_slice_start_indices[i]
-                c = len(cut_sequences[i])
+                c = attention_lengths[i]
                 attn_mask = np.zeros(shape=(
                     config.num_attention_heads * config.num_hidden_layers, c, c
                 ))
@@ -330,7 +345,7 @@ class GreedyProbsCalculator(StatCalculator):
             for i in range(len(texts)):
                 input_len = batch["input_ids"].shape[1]
                 slice_start_idx = all_slice_start_indices[i]
-                c = len(cut_sequences[i])
+                c = attention_lengths[i]
 
                 if c == 0:
                     attention_selected.append(None)
@@ -378,6 +393,9 @@ class GreedyProbsCalculator(StatCalculator):
         #     for ll in lls    
         # ]
 
+        print("cut_texts:\n", cut_texts)
+        print("full_texts:\n", full_texts)
+
         result_dict = {
             "input_tokens": batch["input_ids"].to("cpu").tolist(),
             "greedy_log_probs": cut_logits,
@@ -385,6 +403,7 @@ class GreedyProbsCalculator(StatCalculator):
             "greedy_tokens_alternatives": cut_alternatives,
             "greedy_texts": cut_texts,
             "greedy_texts_full": full_texts, # UGRIP: full text
+            "failed_generation": failed_generation,
             "greedy_log_likelihoods": lls,
         }
         result_dict.update(embeddings_dict)
