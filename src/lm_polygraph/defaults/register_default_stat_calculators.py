@@ -119,7 +119,7 @@ def register_default_stat_calculators(
             GreedyCrossEncoderSimilarityMatrixCalculator,
             "lm_polygraph.defaults.stat_calculator_builders.default_GreedyCrossEncoderSimilarityMatrixCalculator",
             {
-                "batch_size": 10,
+                "batch_size": deberta_batch_size,
                 "cross_encoder_name": "cross-encoder/stsb-roberta-large",
             },
         )
