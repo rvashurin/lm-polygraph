@@ -47,6 +47,37 @@ class GreedyProbsCalculator(StatCalculator):
         self.output_hidden_states = output_hidden_states
         self.n_alternatives = n_alternatives
 
+    @staticmethod
+    def _eos_token_ids(model) -> set:
+        """
+        Collect every token id that terminates a generation.
+
+        Models such as Falcon3, Qwen and Llama-3 declare several EOS ids (e.g. a
+        base `<|endoftext|>` plus a chat-template `<|im_end|>`), and the tokenizer
+        and the model config do not always agree on the full set. Comparing against
+        `tokenizer.eos_token_id` alone misses the alternates, so the generation is
+        not truncated where it actually ended and the trailing padding is scored as
+        if the model had produced it.
+
+        Returns the union of the tokenizer's and the model config's ids, tolerating
+        an int, a list, or None from either side.
+        """
+
+        def _as_ids(value) -> list:
+            if value is None:
+                return []
+            if isinstance(value, int):
+                return [value]
+            return [v for v in value if isinstance(v, int)]
+
+        ids = _as_ids(getattr(model.tokenizer, "eos_token_id", None))
+
+        inner = getattr(model, "model", None)
+        config = getattr(inner, "config", None)
+        ids += _as_ids(getattr(config, "eos_token_id", None))
+
+        return set(ids)
+
     def _preprocess_attention(
         self,
         attentions: torch.Tensor,
@@ -150,6 +181,8 @@ class GreedyProbsCalculator(StatCalculator):
                         torch.float16
                     )  # numpy does not support bfloat16
 
+        eos_ids = self._eos_token_ids(model)
+
         cut_logits = []
         cut_sequences = []
         cut_texts = []
@@ -164,7 +197,7 @@ class GreedyProbsCalculator(StatCalculator):
                 seq = sequences[i, 1:].cpu()
             length, text_length = len(seq), len(seq)
             for j in range(len(seq)):
-                if seq[j] == model.tokenizer.eos_token_id:
+                if seq[j].item() in eos_ids:
                     length = j + 1
                     text_length = j
                     break
