@@ -1,7 +1,7 @@
 defaults:
   - default
 
-path: meta-llama/Llama-3.1-8B-Instruct
+path: tiiuae/Falcon3-7B-Instruct
 type: CausalLM
 path_to_load_script: model/default_causal.py
 
@@ -9,5 +9,7 @@ instruct: true
 
 load_model_args:
   device_map: auto
+  # SDPA and vLLM do not return the attention probabilities needed by
+  # GreedyProbsCalculator.
   attn_implementation: eager
 load_tokenizer_args: {}

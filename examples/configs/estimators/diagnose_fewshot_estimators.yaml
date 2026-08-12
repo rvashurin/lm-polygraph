@@ -1,0 +1,7 @@
+# Estimator set for the Phase-0 few-shot diagnostic (scripts/diagnose_fewshot.py).
+# The four white-box, information-theoretic baselines only. Focus is intentionally
+# excluded so the diagnostic has no IDF-pickle / spaCy dependency.
+- name: MaximumSequenceProbability
+- name: Perplexity
+- name: MeanTokenEntropy
+- name: TokenSAR

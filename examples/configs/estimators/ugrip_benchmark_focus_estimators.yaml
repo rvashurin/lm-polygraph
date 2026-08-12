@@ -1,7 +1,3 @@
-- name: MaximumSequenceProbability
-- name: Perplexity
-- name: MeanTokenEntropy
-- name: TokenSAR
 - name: Focus
   cfg:
     model_name: '${model.path}'

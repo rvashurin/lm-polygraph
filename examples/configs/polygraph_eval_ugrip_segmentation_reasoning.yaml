@@ -63,6 +63,8 @@ tokens: [5, 10, 25, 50, 100, 250]
 
 
 slicing_target: reasoning
+answer_marker: "### Answer:"
+reasoning_marker: "### Reasoning:"
 
 stat_calculator:
     batch_size: 1

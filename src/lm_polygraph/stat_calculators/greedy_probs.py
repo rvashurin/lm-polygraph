@@ -1,13 +1,17 @@
+import re
+import logging
+
 import torch
 import numpy as np
 from vllm import SamplingParams
 
-from typing import Dict, List, Tuple, Union
-from collections import deque
+from typing import Dict, List, Optional, Tuple, Union
 
 from .embeddings import get_embeddings_from_output
 from .stat_calculator import StatCalculator
 from lm_polygraph.model_adapters import WhiteboxModel, WhiteboxModelvLLM
+
+log = logging.getLogger("lm_polygraph")
 
 
 class GreedyProbsCalculator(StatCalculator):
@@ -33,6 +37,7 @@ class GreedyProbsCalculator(StatCalculator):
             "greedy_tokens_alternatives",
             "greedy_texts",
             "greedy_texts_full", # UGRIP: To account for reasoning-only analysis
+            "failed_generation", # UGRIP: per-sample flag, True when the answer slice is unusable
             "greedy_log_likelihoods",
             "embeddings",
             "attention_all",
@@ -46,6 +51,7 @@ class GreedyProbsCalculator(StatCalculator):
         output_hidden_states: bool = False,
         n_alternatives: int = 10,
         answer_marker: str = "### Answer:",
+        reasoning_marker: str = "### Reasoning:",
         slicing_target: str = None,
     ):
         """
@@ -56,45 +62,74 @@ class GreedyProbsCalculator(StatCalculator):
             output_hidden_states (bool): Whether to calculate and return embeddings.
             n_alternatives (int): Number of alternative tokens to store at each position.
             answer_marker (str): The string that separates different parts of the generation.
+            reasoning_marker (str): Label that prefixes the reasoning portion of the
+                generation; when slicing_target="reasoning", these tokens are stripped
+                from the start of the slice so UQ is not computed on the label itself.
             slicing_target (str): Determines which part of the generation to analyze.
                 - "answer": Analyzes the text after the answer_marker.
-                - "reasoning": Analyzes the text before the answer_marke`.
+                - "reasoning": Analyzes the text before the answer_marker (and after the
+                  reasoning_marker, if found at the start).
                 - None or any other string: Analyzes the full generation without slicing.
         """
         super().__init__()
         self.output_attentions = output_attentions
         self.output_hidden_states = output_hidden_states
         self.n_alternatives = n_alternatives
-        
+
         if slicing_target not in ["answer", "reasoning", None]:
             self.slicing_target = None
         else:
             self.slicing_target = slicing_target
         self.answer_marker = answer_marker if self.slicing_target else None
-
-
-    def _find_token_subsequence(self, main_list: List[int], len_sub: int, substring: str, tokenizer) -> int:
-        """
-        Finds the starting index of a token sublist in the main list by comparing the decoded strings.
-        """
-        if len_sub == 0 or len_sub > len(main_list):
-            return -1
-        initial_window_tokens = main_list[len(main_list) - len_sub:]
-        window_decoded = deque(
-            (tokenizer.decode(t) for t in initial_window_tokens), maxlen=len_sub
+        self.reasoning_marker = reasoning_marker if self.slicing_target == "reasoning" else None
+        # Tolerant regexes for locating the markers in the decoded generation,
+        # robust to per-model formatting (missing space, markdown bold/hashes,
+        # casing) rather than exact-substring matching on token windows.
+        self._answer_re = (
+            self._tolerant_marker_regex(self.answer_marker) if self.answer_marker else None
+        )
+        self._reasoning_re = (
+            self._tolerant_marker_regex(self.reasoning_marker) if self.reasoning_marker else None
         )
 
-        for i in range(len(main_list) - len_sub, -1, -1):
-            current_window_text = "".join(list(window_decoded))
-            if substring in current_window_text:
-                return i
-            if i > 0:
-                new_token = main_list[i - 1]
-                new_decoded_token = tokenizer.decode(new_token)
-                window_decoded.appendleft(new_decoded_token)
+    @staticmethod
+    def _tolerant_marker_regex(marker: str) -> "re.Pattern":
+        """Build a tolerant regex from a marker like '### Answer:'. Matches the
+        alphabetic label with flexible leading hashes, optional markdown bold,
+        flexible whitespace, and case-insensitivity: '### Answer:', '###Answer:',
+        '**Answer:**', 'answer :' all match. Falls back to the escaped literal if
+        the marker has no letters."""
+        word = re.sub(r"[^A-Za-z]", "", marker)
+        if not word:
+            return re.compile(re.escape(marker))
+        return re.compile(r"#{0,6}\s*\*{0,2}\s*" + word + r"\s*\*{0,2}\s*:", re.IGNORECASE)
 
-        return -1
-
+    def _marker_token_span(
+        self, full_gen_seq: torch.Tensor, tokenizer, regex: "re.Pattern"
+    ) -> Tuple[Optional[int], Optional[int]]:
+        """Locate `regex` in the decoded generation and map its char span to token
+        indices. Returns (start_tok, end_tok) where start_tok is the first token
+        overlapping the marker and end_tok is the first token past it (so the
+        text after the marker is full_gen_seq[end_tok:]). Returns (None, None) if
+        the marker is not found."""
+        text = tokenizer.decode(full_gen_seq.tolist())
+        m = regex.search(text)
+        if m is None:
+            return None, None
+        c0, c1 = m.start(), m.end()
+        start_tok, end_tok = None, None
+        for k in range(1, len(full_gen_seq) + 1):
+            decoded_len = len(tokenizer.decode(full_gen_seq[:k].tolist()))
+            if start_tok is None and decoded_len > c0:
+                start_tok = k - 1
+            if decoded_len >= c1:
+                end_tok = k
+                break
+        if start_tok is None:
+            start_tok = 0
+        if end_tok is None:
+            end_tok = len(full_gen_seq)
+        return start_tok, end_tok
 
     def __call__(
         self,
@@ -143,31 +178,6 @@ class GreedyProbsCalculator(StatCalculator):
             ),
         }
 
-        # Method (1): specify EOS token id on generation
-        if model.model_type == "vLLMCausalLM":
-            eos_ids = [model.tokenizer.eos_token_id]
-            generate_kwargs["sampling_params"] = SamplingParams(
-                stop_token_ids=eos_ids
-            )
-        else:
-            
-            # List of EOS
-            eos_ids_tokenizer = model.tokenizer.eos_token_id
-            eos_ids_model_config = model.model.config.eos_token_id
-
-            if isinstance(eos_ids_tokenizer, int):
-                eos_ids_tokenizer = [eos_ids_tokenizer]
-
-            if isinstance(eos_ids_model_config, int):
-                eos_ids_model_config = [eos_ids_model_config]
-
-            eos_ids_tokenizer = eos_ids_tokenizer or []
-            eos_ids_model_config = eos_ids_model_config or []
-
-            eos_ids = list(set(eos_ids_tokenizer) | set(eos_ids_model_config))
-
-            generate_kwargs["eos_token_id"] = eos_ids
-
         with torch.no_grad():
             out = model.generate(**batch, **generate_kwargs)
             logits = torch.stack(out.scores, dim=1)
@@ -189,12 +199,30 @@ class GreedyProbsCalculator(StatCalculator):
         cut_texts = []
         cut_alternatives = []
         all_slice_start_indices = []
+        failed_generation = [] # UGRIP: per-sample, True when the answer slice is unusable
 
-        marker_tokens = []
-        if self.answer_marker:
-            marker_tokens = model.tokenizer(
-                self.answer_marker, add_special_tokens=False
-            ).input_ids
+        # Count generations whose answer marker could not be located (visibility
+        # into silent mis-slicing); the resulting samples are dropped from the
+        # batch downstream via the per-sample `failed_generation` flag.
+        marker_not_found = 0
+
+        eos_ids_tokenizer = getattr(model.tokenizer, "eos_token_id", None)
+        if isinstance(eos_ids_tokenizer, int):
+            eos_ids_tokenizer = [eos_ids_tokenizer]
+        elif eos_ids_tokenizer is None:
+            eos_ids_tokenizer = []
+
+        eos_ids_model_config = None
+        if getattr(model, "model", None) is not None:
+            eos_ids_model_config = getattr(
+                getattr(model.model, "config", None), "eos_token_id", None
+            )
+        if isinstance(eos_ids_model_config, int):
+            eos_ids_model_config = [eos_ids_model_config]
+        elif eos_ids_model_config is None:
+            eos_ids_model_config = []
+
+        eos_ids = list(set(eos_ids_tokenizer) | set(eos_ids_model_config))
 
         for i in range(len(texts)):
             if model.model_type == "CausalLM":
@@ -216,21 +244,37 @@ class GreedyProbsCalculator(StatCalculator):
 
             slice_start_idx = 0
             slice_end_idx = len(full_gen_seq)
-            marker_pos = -1
-
-            if self.slicing_target and len(marker_tokens) > 0:
-                marker_pos = self._find_token_subsequence(full_gen_seq.tolist(), len(marker_tokens), self.answer_marker, model.tokenizer)
+            failed = False
 
             if self.slicing_target == "answer":
-                if marker_pos != -1:
-                    slice_start_idx = marker_pos + len(marker_tokens)
+                a_start, a_end = self._marker_token_span(
+                    full_gen_seq, model.tokenizer, self._answer_re
+                )
+                if a_start is not None:
+                    slice_start_idx = a_end  # analyze tokens after the answer marker
                 else:
-                    # If marker not found for answer mode, produces empty result
+                    # No answer marker -> no answer span. Flag the sample so the
+                    # manager drops it from the batch; the empty slice below would
+                    # otherwise yield degenerate estimator output.
                     slice_start_idx, slice_end_idx = 0, 0
+                    marker_not_found += 1
+                    failed = True
             elif self.slicing_target == "reasoning":
-                if marker_pos != -1:
-                    slice_end_idx = marker_pos
-                # If marker not found, process whole sequence
+                a_start, a_end = self._marker_token_span(
+                    full_gen_seq, model.tokenizer, self._answer_re
+                )
+                if a_start is not None:
+                    slice_end_idx = a_start  # reasoning = tokens before the answer marker
+                else:
+                    marker_not_found += 1  # marker missing -> treat whole seq as reasoning
+                # Strip a leading reasoning label ('### Reasoning:') so UQ is not
+                # diluted by the boilerplate label tokens.
+                if self._reasoning_re is not None:
+                    r_start, r_end = self._marker_token_span(
+                        full_gen_seq[:slice_end_idx], model.tokenizer, self._reasoning_re
+                    )
+                    if r_start is not None:
+                        slice_start_idx = r_end
 
 
             all_slice_start_indices.append(slice_start_idx)
@@ -245,6 +289,12 @@ class GreedyProbsCalculator(StatCalculator):
 
             final_seq_tokens = seq[:length].tolist()
             final_seq_text_tokens = seq[:text_length]
+
+            # An answer slice that came out empty (marker present but nothing
+            # generated after it) is as unusable as a missing marker.
+            if self.slicing_target == "answer" and not final_seq_text_tokens.size(0):
+                failed = True
+            failed_generation.append(failed)
 
             cut_sequences.append(final_seq_tokens)
             cut_texts.append(model.tokenizer.decode(final_seq_text_tokens))
@@ -265,13 +315,7 @@ class GreedyProbsCalculator(StatCalculator):
                     reverse=True,
                 )
 
-        # 3 Methods to handle inf:
-        # (1) Simplest: replace all inf/nan into 0
-        # (2) Little tweak: exclude all padding tokens
-        # (3) Experimental: add eos token to the .generate() argument`
-
         lls = []
-        pad_id = getattr(model.tokenizer, "pad_token_id", None)
         for i in range(len(texts)):
             log_probs = cut_logits[i]
             tokens = cut_sequences[i]
@@ -280,13 +324,6 @@ class GreedyProbsCalculator(StatCalculator):
                 continue
             assert len(tokens) == len(log_probs)
 
-            # Method (2): skip padding steps entirely so they never enter downstream stats
-            # 'filtered = [
-            #     log_probs[j, tokens[j]]
-            #     for j in range(len(log_probs))
-            #     if pad_id is None or tokens[j] != pad_id
-            # ]
-            # lls.append(filtered)
             lls.append([log_probs[j, tokens[j]] for j in range(len(log_probs))])
 
         attention_all = []
@@ -372,11 +409,12 @@ class GreedyProbsCalculator(StatCalculator):
         else:
             raise NotImplementedError
         
-        # Method (1): replace nan and inf into 0 proba
-        # lls = [
-        #     np.nan_to_num(np.asarray(ll, float), nan=0.0, posinf=0.0, neginf=0.0)
-        #     for ll in lls    
-        # ]
+        if self.slicing_target and marker_not_found:
+            log.warning(
+                f"slicing_target={self.slicing_target}: answer marker "
+                f"({self.answer_marker!r}) not found in {marker_not_found}/{len(texts)} "
+                f"generations in this batch."
+            )
 
         result_dict = {
             "input_tokens": batch["input_ids"].to("cpu").tolist(),
@@ -385,6 +423,7 @@ class GreedyProbsCalculator(StatCalculator):
             "greedy_tokens_alternatives": cut_alternatives,
             "greedy_texts": cut_texts,
             "greedy_texts_full": full_texts, # UGRIP: full text
+            "failed_generation": failed_generation,
             "greedy_log_likelihoods": lls,
         }
         result_dict.update(embeddings_dict)
