@@ -6,7 +6,6 @@ import numpy as np
 from vllm import SamplingParams
 
 from typing import Dict, List, Optional, Tuple, Union
-from collections import deque
 
 from .embeddings import get_embeddings_from_output
 from .stat_calculator import StatCalculator
@@ -38,8 +37,8 @@ class GreedyProbsCalculator(StatCalculator):
             "greedy_tokens_alternatives",
             "greedy_texts",
             "greedy_texts_full", # UGRIP: To account for reasoning-only analysis
+            "failed_generation", # UGRIP: per-sample flag, True when the answer slice is unusable
             "greedy_log_likelihoods",
-            "empty_slice", # UGRIP: per-sample flag, True when the UQ slice is empty
             "embeddings",
             "attention_all",
             "attention_selected",
@@ -132,29 +131,6 @@ class GreedyProbsCalculator(StatCalculator):
             end_tok = len(full_gen_seq)
         return start_tok, end_tok
 
-    def _find_token_subsequence(self, main_list: List[int], len_sub: int, substring: str, tokenizer) -> int:
-        """
-        Finds the starting index of a token sublist in the main list by comparing the decoded strings.
-        """
-        if len_sub == 0 or len_sub > len(main_list):
-            return -1
-        initial_window_tokens = main_list[len(main_list) - len_sub:]
-        window_decoded = deque(
-            (tokenizer.decode(t) for t in initial_window_tokens), maxlen=len_sub
-        )
-
-        for i in range(len(main_list) - len_sub, -1, -1):
-            current_window_text = "".join(list(window_decoded))
-            if substring in current_window_text:
-                return i
-            if i > 0:
-                new_token = main_list[i - 1]
-                new_decoded_token = tokenizer.decode(new_token)
-                window_decoded.appendleft(new_decoded_token)
-
-        return -1
-
-
     def __call__(
         self,
         dependencies: Dict[str, np.array],
@@ -223,11 +199,11 @@ class GreedyProbsCalculator(StatCalculator):
         cut_texts = []
         cut_alternatives = []
         all_slice_start_indices = []
-        empty_slices = [] # UGRIP: per-sample, True when the sliced UQ span is empty
+        failed_generation = [] # UGRIP: per-sample, True when the answer slice is unusable
 
         # Count generations whose answer marker could not be located (visibility
-        # into silent mis-slicing); the resulting empty slices are dropped from
-        # PRR downstream via the per-sample `empty_slice` flag.
+        # into silent mis-slicing); the resulting samples are dropped from the
+        # batch downstream via the per-sample `failed_generation` flag.
         marker_not_found = 0
 
         eos_ids_tokenizer = getattr(model.tokenizer, "eos_token_id", None)
@@ -268,6 +244,7 @@ class GreedyProbsCalculator(StatCalculator):
 
             slice_start_idx = 0
             slice_end_idx = len(full_gen_seq)
+            failed = False
 
             if self.slicing_target == "answer":
                 a_start, a_end = self._marker_token_span(
@@ -276,10 +253,12 @@ class GreedyProbsCalculator(StatCalculator):
                 if a_start is not None:
                     slice_start_idx = a_end  # analyze tokens after the answer marker
                 else:
-                    # No answer marker -> no answer span; empty slice (dropped
-                    # from PRR later via the empty_slice flag).
+                    # No answer marker -> no answer span. Flag the sample so the
+                    # manager drops it from the batch; the empty slice below would
+                    # otherwise yield degenerate estimator output.
                     slice_start_idx, slice_end_idx = 0, 0
                     marker_not_found += 1
+                    failed = True
             elif self.slicing_target == "reasoning":
                 a_start, a_end = self._marker_token_span(
                     full_gen_seq, model.tokenizer, self._answer_re
@@ -311,7 +290,12 @@ class GreedyProbsCalculator(StatCalculator):
             final_seq_tokens = seq[:length].tolist()
             final_seq_text_tokens = seq[:text_length]
 
-            empty_slices.append(len(final_seq_tokens) == 0)
+            # An answer slice that came out empty (marker present but nothing
+            # generated after it) is as unusable as a missing marker.
+            if self.slicing_target == "answer" and not final_seq_text_tokens.size(0):
+                failed = True
+            failed_generation.append(failed)
+
             cut_sequences.append(final_seq_tokens)
             cut_texts.append(model.tokenizer.decode(final_seq_text_tokens))
 
@@ -439,8 +423,8 @@ class GreedyProbsCalculator(StatCalculator):
             "greedy_tokens_alternatives": cut_alternatives,
             "greedy_texts": cut_texts,
             "greedy_texts_full": full_texts, # UGRIP: full text
+            "failed_generation": failed_generation,
             "greedy_log_likelihoods": lls,
-            "empty_slice": empty_slices, # UGRIP: per-sample empty-slice flag
         }
         result_dict.update(embeddings_dict)
         if self.output_attentions:
