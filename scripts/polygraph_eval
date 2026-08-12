@@ -178,6 +178,7 @@ def get_stat_calculator_names(config):
     output_hidden_states = False if getattr(config.model, "type", "Whitebox") == "vLLMCausalLM" else True
     hf_cache = getattr(config, "hf_cache", None)
     deberta_batch_size = getattr(config, "deberta_batch_size", 10)
+    output_attentions_selected = getattr(config, "output_attentions_selected", False)
     blackbox_supports_logprobs = model_type == "Blackbox" and getattr(
         config.model, "supports_logprobs", False
     )
@@ -192,6 +193,7 @@ def get_stat_calculator_names(config):
             output_hidden_states=output_hidden_states,
             blackbox_supports_logprobs=blackbox_supports_logprobs,
             deberta_batch_size=deberta_batch_size,
+            output_attentions_selected=output_attentions_selected,
         )
 
     for stat_calculator in config.stat_calculators:

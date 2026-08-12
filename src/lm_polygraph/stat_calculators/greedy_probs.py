@@ -33,6 +33,7 @@ class GreedyProbsCalculator(StatCalculator):
             "greedy_log_likelihoods",
             "embeddings",
             "attention_all",
+            "attention_selected",
             "tokenizer",
         ], []
 
@@ -41,11 +42,24 @@ class GreedyProbsCalculator(StatCalculator):
         output_attentions: bool = True,
         output_hidden_states: bool = False,
         n_alternatives: int = 10,
+        output_attentions_selected: bool = False,
     ):
+        """
+        Parameters:
+            output_attentions (bool): Whether to collect the full `attention_all` map.
+            output_hidden_states (bool): Whether to collect embeddings.
+            n_alternatives (int): Number of alternative tokens to store per position.
+            output_attentions_selected (bool): Whether to additionally collect
+                `attention_selected` — per-head attention from each generated token
+                back over the prompt, for a few chosen layers. Off by default: it is
+                far larger than `attention_all` (hundreds of MB per sample for long
+                generations), so enable it only for targeted runs.
+        """
         super().__init__()
         self.output_attentions = output_attentions
         self.output_hidden_states = output_hidden_states
         self.n_alternatives = n_alternatives
+        self.output_attentions_selected = output_attentions_selected
 
     @staticmethod
     def _eos_token_ids(model) -> set:
@@ -271,6 +285,46 @@ class GreedyProbsCalculator(StatCalculator):
                     attn_mask[:, j, :j] = stacked_attention.cpu().numpy()
                 attention_all.append(attn_mask)
 
+        attention_selected = []
+        if (
+            self.output_attentions
+            and self.output_attentions_selected
+            and (model.model_type != "vLLMCausalLM")
+        ):
+            # Attention from each generated token back over the prompt, kept per
+            # head for a few layers rather than collapsed like `attention_all`.
+            # Layers: the middle one plus the last two, which is where the
+            # attention-based uncertainty signal is usually looked for.
+            num_layers = len(attentions[0])
+            selected_layers = sorted({num_layers // 2, num_layers - 2, num_layers - 1})
+            selected_layers = [layer for layer in selected_layers if layer >= 0]
+            num_heads = attentions[0][selected_layers[0]].shape[1]
+            prompt_len = batch["input_ids"].shape[1]
+
+            for i in range(len(texts)):
+                c = len(cut_sequences[i])
+                if c == 0:
+                    attention_selected.append(None)
+                    continue
+
+                attn_mask = np.zeros(
+                    shape=(len(selected_layers), num_heads, c, prompt_len)
+                )
+                for j in range(c):
+                    if j >= len(attentions):
+                        break
+                    for li, layer in enumerate(selected_layers):
+                        layer_attn = attentions[j][layer][i, :num_heads, 0, :prompt_len]
+                        if layer_attn.dtype == torch.bfloat16:
+                            layer_attn = layer_attn.to(
+                                torch.float16
+                            )  # numpy does not support bfloat16
+                        key_len = layer_attn.shape[-1]
+                        attn_mask[li, :num_heads, j, :key_len] = (
+                            layer_attn.cpu().numpy()
+                        )
+                attention_selected.append(attn_mask)
+
         if not self.output_hidden_states:
             embeddings_dict = {}
         elif model.model_type == "CausalLM":
@@ -297,4 +351,6 @@ class GreedyProbsCalculator(StatCalculator):
         if self.output_attentions:
             result_dict.update({"attention_all": attention_all})
             result_dict.update({"tokenizer": model.tokenizer})
+            if self.output_attentions_selected:
+                result_dict.update({"attention_selected": attention_selected})
         return result_dict
